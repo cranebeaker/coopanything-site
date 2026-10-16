@@ -56,8 +56,30 @@ The workflow in `.github/workflows/refresh-data.yml` runs the script every night
 
 Genres, stages and quality tiers stay manual, and the script never touches them. When GitHub hints that a stage is out of date (an archived repo, a stable 1.0 release, no push in a year), it lists the entry under "Suggested review", which also appears in the workflow's job summary. Moved repos and 404s are listed too, and nothing is deleted.
 
+## Covers
+
+Each game's box art is in `assets/covers/<id>.webp`. The entry's `cover` field points at it, and `coverFrom` says where it came from. To fetch covers for entries that don't have one yet:
+
+```bash
+python tools/fetch_covers.py
+```
+
+It needs Pillow (`pip install pillow`). The script tries the [libretro thumbnails](https://thumbnails.libretro.com/) server first (the box art RetroArch uses), then the infobox image of the matching English Wikipedia article. Entries with no match show the console's colour and the game's initials instead. The nightly workflow runs it too, so new entries get a cover by the next morning, and the job summary lists them so you can check the picks.
+
+If a cover is wrong or missing, set the entry's `coverFrom` and fetch it again:
+
+- `"libretro:Castlevania (USA)"`: a box art name from the console's folder on thumbnails.libretro.com
+- `"wikipedia:Kameo"`: the image on that Wikipedia page
+- `"none"`: keep the placeholder
+
+```bash
+python tools/fetch_covers.py --only castlevania-64 --force
+```
+
+To use your own image, save it under `assets/covers/`, point `cover` at it and set `coverFrom` to `"manual"`. The script never touches those.
+
 ## Sources and license
 
-The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. The first snapshot is from 16 October 2026.
+The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.
 
 RecompHaven links to projects and hosts no game files. Every recomp needs your own legally obtained copy of the game.

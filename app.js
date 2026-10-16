@@ -130,6 +130,21 @@
   const aiTag = (e) => (e.ai ? '<span class="ai" title="The project discloses substantial AI-generated code">AI</span>' : '');
   const actTag = (e) => `<span class="act act--${activity(e)}" title="${e.updated ? 'Last push ' + esc(fmtDate(e.updated)) : 'No activity data'}">${esc(relTime(e.updated))}</span>`;
 
+  const STOPWORDS = new Set(['the', 'of', 'and', 'a', 'an', 'to', 'in']);
+  function initials(title) {
+    const words = title.replace(/\s*\([^)]*\)\s*$/, '').split(/[^A-Za-z0-9]+/).filter((w) => w && !STOPWORDS.has(w.toLowerCase()));
+    return words.slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  }
+
+  // Box art, or the console's colour with the game's initials when there is none.
+  // size: sm (table), md (cards), lg (detail panel).
+  function coverTile(e, size) {
+    const attrs = `class="cover cover--${size}${e.cover ? '' : ' cover--none'}" style="--c:${consoleOf(e).color}" data-initials="${esc(initials(e.title))}"`;
+    return e.cover
+      ? `<span ${attrs}><img src="${esc(e.cover)}" alt="" loading="lazy" decoding="async"></span>`
+      : `<span ${attrs} aria-hidden="true">${esc(initials(e.title))}</span>`;
+  }
+
   function subline(e) {
     const bits = [e.project, e.team && e.team !== e.project ? e.team : null].filter(Boolean);
     return `${esc(bits.join(' · '))}${aiTag(e)}`;
@@ -196,10 +211,10 @@
   function renderTable(list) {
     $('#rows').innerHTML = list.map((e) => `
       <tr data-id="${esc(e.id)}">
-        <td><div class="game">
+        <td><div class="game-cell">${coverTile(e, 'sm')}<div class="game">
           <button type="button" class="game__title" data-open="${esc(e.id)}">${esc(e.title)}</button>
           <span class="game__sub">${subline(e)}</span>
-        </div></td>
+        </div></div></td>
         <td>${ctag(e)}</td>
         <td><div class="stack"><span>${esc(e.genre)}</span><span class="small muted">${e.year || ''}</span></div></td>
         <td>${stagePill(e)}</td>
@@ -225,10 +240,10 @@
           <div class="card__meta">${ctag(e)}<span>${esc(e.genre)}</span>${e.year ? `<span>${e.year}</span>` : ''}</div>
           ${tierTile(e)}
         </div>
-        <div class="game">
+        <div class="card__main">${coverTile(e, 'md')}<div class="game">
           <button type="button" class="game__title" data-open="${esc(e.id)}">${esc(e.title)}</button>
           <span class="game__sub">${subline(e)}</span>
-        </div>
+        </div></div>
         ${(e.features || []).length ? `<div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div>` : ''}
         <div class="card__foot">
           ${stagePill(e)}
@@ -336,9 +351,12 @@
     $('#d-body').innerHTML = `
       <button type="button" class="d-close" data-close aria-label="Close">×</button>
       <div class="d-head">
-        <div class="d-head__meta">${ctag(e)}<span>${esc(c.label)}</span>${e.year ? `<span>· ${e.year}</span>` : ''}${e.developer ? `<span>· ${esc(e.developer)}</span>` : ''}</div>
-        <h2 class="d-title" id="d-title">${esc(e.title)}</h2>
-        <div class="d-head__meta">${subline(e)}</div>
+        ${coverTile(e, 'lg')}
+        <div class="d-head__text">
+          <div class="d-head__meta">${ctag(e)}<span>${esc(c.label)}</span>${e.year ? `<span>· ${e.year}</span>` : ''}${e.developer ? `<span>· ${esc(e.developer)}</span>` : ''}</div>
+          <h2 class="d-title" id="d-title">${esc(e.title)}</h2>
+          <div class="d-head__meta">${subline(e)}</div>
+        </div>
       </div>
       <div class="d-verdict">
         <span class="tier" data-tier="${e.quality}">${e.quality}</span>
@@ -374,6 +392,14 @@
   function closeDetail() {
     if (dialog.open) dialog.close();
   }
+
+  // A cover that fails to load turns into the initials placeholder.
+  document.addEventListener('error', (ev) => {
+    const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover');
+    if (!box) return;
+    box.classList.add('cover--none');
+    box.textContent = box.dataset.initials;
+  }, true);
 
   dialog.addEventListener('close', () => setHash(''));
   dialog.addEventListener('click', (ev) => {

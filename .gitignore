@@ -12,3 +12,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local Python environment (Pillow for tools/fetch_covers.py)
+.venv/
