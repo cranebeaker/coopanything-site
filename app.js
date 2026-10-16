@@ -36,6 +36,8 @@
     release: { label: 'Latest release', dir: 'desc', get: (e) => e.versionDate, dirs: ['Oldest first', 'Newest first'] },
     started: { label: 'Project start', dir: 'desc', get: (e) => e.started, dirs: ['Oldest first', 'Newest first'] },
     stars: { label: 'GitHub stars', dir: 'desc', get: (e) => e.stars, dirs: ['Fewest first', 'Most first'] },
+    // starsWeek: stars gained in the last 7 days, from tools/track_stars.py.
+    trending: { label: 'Trending this week', dir: 'desc', get: (e) => e.starsWeek, dirs: ['Fewest first', 'Most first'] },
     title: { label: 'Name', dir: 'asc', get: (e) => e.title, dirs: ['A to Z', 'Z to A'] },
     year: { label: 'Original release', dir: 'asc', get: (e) => e.year, dirs: ['Oldest first', 'Newest first'] },
     console: { label: 'Console', dir: 'asc', get: (e) => consoleOf(e).label, dirs: ['A to Z', 'Z to A'] },
@@ -111,6 +113,8 @@
   };
 
   const fmtStars = (n) => (n == null ? '—' : n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n));
+  const gainTag = (e) => (e.starsWeek > 0
+    ? `<span class="gain" title="${e.starsWeek.toLocaleString('en')} new GitHub stars in the last 7 days">+${fmtStars(e.starsWeek)}</span>` : '');
 
   const ctag = (e) => {
     const c = consoleOf(e);
@@ -241,7 +245,7 @@
           ? `<div class="stack"><span class="mono trunc" title="${esc(e.version || 'Release')}">${esc(e.version || 'Release')}</span><span class="small muted">${esc(fmtDate(e.versionDate))}</span></div>`
           : '<span class="muted">No release</span>'}</td>
         <td class="small col-activity">${actTag(e)}</td>
-        <td class="num"><span class="mono">${fmtStars(e.stars)}</span></td>
+        <td class="num"><div class="stack"><span class="mono">${fmtStars(e.stars)}</span>${gainTag(e)}</div></td>
       </tr>`).join('');
 
     document.querySelectorAll('.grid th[data-sort]').forEach((th) => {
@@ -264,7 +268,7 @@
         ${(e.features || []).length ? `<div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div>` : ''}
         <div class="card__foot">
           ${stagePill(e)}
-          <span class="muted">${actTag(e)}<span class="mono" title="GitHub stars">★ ${fmtStars(e.stars)}</span></span>
+          <span class="muted">${actTag(e)}<span class="mono" title="GitHub stars">★ ${fmtStars(e.stars)} ${gainTag(e)}</span></span>
         </div>
       </article>`).join('');
   }
@@ -359,6 +363,33 @@
     }
   }
 
+  // ── What's new: latest releases and trending ─────────────
+
+  const LATEST = DATA.filter((e) => e.versionDate)
+    .sort((a, b) => b.versionDate.localeCompare(a.versionDate) || (b.stars || 0) - (a.stars || 0))
+    .slice(0, 5);
+  const TRENDING = DATA.filter((e) => e.starsWeek >= 2)
+    .sort((a, b) => b.starsWeek - a.starsWeek || (b.stars || 0) - (a.stars || 0))
+    .slice(0, 5);
+
+  function pulseRow(e, sub, meta) {
+    return `<li><button type="button" class="pulse__row" data-open="${esc(e.id)}">${coverTile(e, 'sm')}
+      <span class="pulse__main"><span class="pulse__title">${esc(e.title)}</span><span class="game__sub">${sub}</span></span>
+      <span class="pulse__meta">${meta}</span></button></li>`;
+  }
+
+  function renderPulse() {
+    $('#latest-list').innerHTML = LATEST.map((e) => pulseRow(e,
+      `${esc(e.project || '')} <span class="mono">${esc(e.version || '')}</span>`,
+      `<span title="${esc(fmtDate(e.versionDate))}">${esc(relTime(e.versionDate))}</span>`)).join('');
+    $('#trending-list').innerHTML = TRENDING.length
+      ? TRENDING.map((e) => pulseRow(e, esc(e.project || ''),
+        `<span class="gain">+${e.starsWeek.toLocaleString('en')}</span> stars`)).join('')
+      : `<li class="pulse__empty">${DATA.some((e) => e.starsWeek != null)
+        ? 'A quiet week: no project has gained more than a star.'
+        : 'Trending shows up once the nightly update has counted this week’s stars.'}</li>`;
+  }
+
   // ── Detail dialog ────────────────────────────────────────
 
   const dialog = $('#detail');
@@ -398,7 +429,8 @@
         ${fact('Latest release', e.version || e.versionDate ? `<span class="mono">${esc(e.version || 'Release')}</span>${e.versionDate ? `<br><span class="small muted">${esc(fmtDate(e.versionDate))}</span>` : ''}` : '<span class="muted">No release yet</span>')}
         ${fact('Last activity', `${actTag(e)}${e.updated ? `<br><span class="small muted">${esc(fmtDate(e.updated))}</span>` : ''}`)}
         ${fact('Project started', e.started ? esc(fmtDate(e.started)) : '')}
-        ${fact('GitHub stars', e.stars != null ? `<span class="mono">${e.stars.toLocaleString('en')}</span>` : '')}
+        ${fact('GitHub stars', e.stars != null ? `<span class="mono">${e.stars.toLocaleString('en')}</span>${
+          e.starsWeek > 0 ? `<br><span class="small gain">+${e.starsWeek.toLocaleString('en')} this week</span>` : ''}` : '')}
         ${fact('Maintained by', esc(e.team || ''))}
         ${fact('Original developer', esc(e.developer || ''))}
       </dl>
@@ -572,6 +604,16 @@
     openDetail(opener.dataset.open || opener.dataset.id);
   });
 
+  document.querySelector('.pulse').addEventListener('click', (ev) => {
+    const row = ev.target.closest('[data-open]');
+    if (row) {
+      openDetail(row.dataset.open);
+    } else if (ev.target.closest('[data-sort-trending]')) {
+      setSort('trending');
+      $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
   window.addEventListener('hashchange', () => {
     const id = decodeURIComponent(location.hash.slice(1));
     if (id && DATA.some((e) => e.id === id)) openDetail(id, { push: false });
@@ -587,6 +629,7 @@
 
   readURL();
   buildControls();
+  renderPulse();
   $('#q').value = state.q;
   render();
 

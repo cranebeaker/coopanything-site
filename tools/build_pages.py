@@ -7,6 +7,8 @@ It copies the static files, then generates:
 - assets/share/<slug>.jpg: a 1200x630 preview image per game, used by Discord,
   Reddit and other sites when someone shares the link. assets/share/home.jpg is
   the same kind of image for the front page.
+- releases/index.html and feed.xml: every project's latest release, newest
+  first, as a page and as an RSS feed.
 - sitemap.xml and robots.txt.
 
 Usage:
@@ -36,6 +38,7 @@ import shutil
 import sys
 import unicodedata
 from collections import defaultdict
+from email.utils import format_datetime
 from urllib.parse import urlencode
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -274,7 +277,8 @@ def card(e, game, rows):
             cells.append(fact('Last activity', f'<span class="act act--{a}">{a.capitalize()}</span>{when}'))
         elif row == 'stars':
             stars = e.get('stars')
-            cells.append(fact('GitHub stars', f'<span class="mono">{stars:,}</span>' if stars is not None else muted('—')))
+            gain = small(f'+{e["starsWeek"]:,} this week') if e.get('starsWeek') else ''
+            cells.append(fact('GitHub stars', f'<span class="mono">{stars:,}</span>{gain}' if stars is not None else muted('—')))
         elif row == 'toolchain':
             tool = 'Custom or unlisted' if e['toolchain'] == 'Custom' else e['toolchain']
             cells.append(fact('Toolchain', f'<span class="mono">{esc(tool)}</span>'))
@@ -302,7 +306,6 @@ def card(e, game, rows):
 def page(game, share_url, snapshot):
     es, pick, name, slug = game['entries'], game['pick'], game['name'], game['slug']
     multi = len(es) > 1
-    url = f'{SITE}/games/{slug}/'
     consoles = [console_of(k) for k in game['consoles']]
 
     rows = ['console'] if len(game['consoles']) > 1 else []
@@ -354,6 +357,31 @@ def page(game, share_url, snapshot):
 
     cards = '\n      '.join(card(e, game, rows) for e in es)
     missing = SUBMIT_URL + '&' + urlencode({'game': name})
+    body = f'''  <nav class="crumbs" aria-label="Breadcrumb">{crumbs}</nav>
+
+  <section class="gp-hero">
+    {cover_html(cover_entry, f'Box art for {name}')}
+    <div class="gp-hero__text">
+      <div class="d-head__meta">{''.join(ctag(k) for k in game['consoles'])}<span>{' · '.join(meta_bits)}</span></div>
+      <h1 class="gp-title">{esc(name)}</h1>
+      <p class="gp-lede">{lede}</p>
+    </div>
+  </section>
+{pick_html}
+  <div class="gp-compare{'' if multi else ' gp-compare--one'}">
+      {cards}
+  </div>
+
+  <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
+    return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
+                    image_alt=f'{name} on RecompHaven: {pick["project"]}, {pick["quality"]} tier',
+                    body=body, snapshot=snapshot)
+
+
+def document(*, title, description, path, share_url, image_alt, body, snapshot):
+    """A whole page in the site's header and footer. path is from the site root, like "games/pt/"."""
+    root = '../' * path.count('/')
+    url = f'{SITE}/{path}'
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -370,23 +398,24 @@ def page(game, share_url, snapshot):
 <meta property="og:image" content="{esc(share_url)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{esc(name)} on RecompHaven: {esc(pick['project'])}, {pick['quality']} tier">
+<meta property="og:image:alt" content="{esc(image_alt)}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="../../favicon.ico" sizes="16x16 32x32 48x48">
-<link rel="icon" type="image/png" sizes="32x32" href="../../assets/icons/icon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="../../assets/icons/icon-192.png">
-<link rel="apple-touch-icon" href="../../assets/icons/apple-touch-icon.png">
+<link rel="alternate" type="application/rss+xml" title="RecompHaven: latest releases" href="{SITE}/feed.xml">
+<link rel="icon" href="{root}favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="{root}assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="{root}styles.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to the content</a>
 
 <header class="masthead masthead--slim">
   <div class="wrap masthead__top">
-    <a class="home-link" href="../../"><img src="../../assets/logo.png" alt="Re:Haven, back to every recomp" width="1615" height="338"></a>
+    <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="Re:Haven, back to every recomp" width="1615" height="338"></a>
     <div class="masthead__actions">
       <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" title="Suggest a missing recomp, decomp or port, or a correction (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
@@ -401,32 +430,133 @@ def page(game, share_url, snapshot):
 </header>
 
 <main id="main" class="wrap gp" tabindex="-1">
-  <nav class="crumbs" aria-label="Breadcrumb">{crumbs}</nav>
-
-  <section class="gp-hero">
-    {cover_html(cover_entry, f'Box art for {name}')}
-    <div class="gp-hero__text">
-      <div class="d-head__meta">{''.join(ctag(k) for k in game['consoles'])}<span>{' · '.join(meta_bits)}</span></div>
-      <h1 class="gp-title">{esc(name)}</h1>
-      <p class="gp-lede">{lede}</p>
-    </div>
-  </section>
-{pick_html}
-  <div class="gp-compare{'' if multi else ' gp-compare--one'}">
-      {cards}
-  </div>
-
-  <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>
+{body}
 </main>
 
 <footer class="wrap footer">
   <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="../../">See every recomp</a>.</p>
+  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a>.</p>
 </footer>
 
-<script src="../../game.js"></script>
+<script src="{root}game.js"></script>
 </body>
 </html>
+'''
+
+
+# ── Release feed ─────────────────────────────────────────
+
+RSS_ICON = ('<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="5" cy="19" r="2.2" fill="currentColor"/>'
+            '<path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>')
+
+
+def releases(entries):
+    """Each project's latest release, newest first (the data keeps only the latest)."""
+    return sorted((e for e in entries if e.get('versionDate')),
+                  key=lambda e: (e['versionDate'], e.get('stars') or 0), reverse=True)
+
+
+def release_url(e):
+    if 'github.com/' in (e.get('repo') or ''):
+        return e['repo'].rstrip('/') + '/releases'
+    return e.get('repo') or e.get('website')
+
+
+def releases_page(entries, share_url, snapshot):
+    items = releases(entries)
+    month_ago = (TODAY - dt.timedelta(days=30)).isoformat()
+    recent = sum(1 for e in items if e['versionDate'] >= month_ago)
+
+    months = []
+    for e in items:
+        d = dt.date.fromisoformat(e['versionDate'])
+        if not months or months[-1][0] != (d.year, d.month):
+            months.append(((d.year, d.month), f'{d:%B} {d.year}', []))
+        months[-1][2].append(e)
+
+    sections = []
+    for (year, month), label, es in months:
+        rows = []
+        for e in es:
+            d = dt.date.fromisoformat(e['versionDate'])
+            c = console_of(e['console'])
+            if e.get('cover'):
+                cover = (f'<span class="cover cover--sm" data-initials="{esc(initials(e["title"]))}" style="--c:{c["color"]}">'
+                         f'<img src="../{esc(e["cover"])}" alt="" loading="lazy" decoding="async"></span>')
+            else:
+                cover = (f'<span class="cover cover--sm cover--none" style="--c:{c["color"]}" aria-hidden="true">'
+                         f'{esc(initials(e["title"]))}</span>')
+            notes = release_url(e)
+            notes = (f'<a class="rl-notes" href="{esc(notes)}" target="_blank" rel="noopener">Release notes ↗</a>'
+                     if notes else '<span></span>')
+            rows.append(f'''      <li class="rl-row">
+        <time class="rl-date" datetime="{e['versionDate']}">{d:%b} {d.day}</time>
+        {cover}
+        <div class="rl-main">
+          <a class="rl-title" href="../games/{slug_of(e['title'])}/">{esc(e['project'])}</a>
+          <span class="rl-version mono">{esc(e.get('version') or 'Release')}</span>
+          <span class="game__sub">{esc(e['title'])} · {esc(c['label'])}</span>
+        </div>
+        <span class="rl-stage">{stage_pill(e)}</span>
+        <span class="tier" data-tier="{e['quality']}" title="{esc(e['quality'] + ': ' + TIERS[e['quality']]['label'])}">{e['quality']}</span>
+        {notes}
+      </li>''')
+        sections.append(f'''  <section class="rl-month" aria-labelledby="m-{year}-{month:02}">
+    <h2 class="gp-h2" id="m-{year}-{month:02}">{label}</h2>
+    <ol class="rl-list">
+''' + '\n'.join(rows) + '''
+    </ol>
+  </section>''')
+
+    body = f'''  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">All recomps</a></nav>
+
+  <header class="rl-head">
+    <div class="gp-hero__text">
+      <h1 class="gp-title">Latest releases</h1>
+      <p class="gp-lede">The newest release of every project on RecompHaven, newest first.
+        {recent} {'project' if recent == 1 else 'projects'} released something in the last 30 days.</p>
+    </div>
+    <a class="btn btn--ghost" href="../feed.xml">{RSS_ICON} RSS feed</a>
+  </header>
+
+''' + '\n\n'.join(sections)
+    return document(title='Latest releases', description=(
+        'The newest releases of every game recompilation, decompilation and native port on RecompHaven, '
+        'newest first. Subscribe with RSS.'), path='releases/', share_url=share_url,
+        image_alt='RecompHaven: every game recompilation, released and in progress', body=body, snapshot=snapshot)
+
+
+def feed(entries, limit=50):
+    """RSS 2.0. Each item's guid is the project and version, so a reader shows each release once."""
+    items = []
+    for e in releases(entries)[:limit]:
+        when = dt.datetime.fromisoformat(e['versionDate']).replace(tzinfo=dt.timezone.utc)
+        c = console_of(e['console'])
+        notes = release_url(e)
+        about = (f'<p><strong>{esc(e["title"])}</strong> ({esc(c["label"])}): {e["quality"]} tier '
+                 f'({esc(TIERS[e["quality"]]["label"])}), {esc(STAGES[e["stage"]]["label"].lower())}.</p>'
+                 + (f'<p>{esc(e["summary"])}</p>' if e.get('summary') else '')
+                 + (f'<p><a href="{esc(notes)}">Release notes</a></p>' if notes else ''))
+        version = e.get('version') or ''
+        items.append(f'''  <item>
+    <title>{esc(f"{e['project']} {version}".strip())} · {esc(e['title'])}</title>
+    <link>{SITE}/games/{slug_of(e['title'])}/</link>
+    <guid isPermaLink="false">recomphaven:{esc(e['id'])}@{esc(version or e['versionDate'])}</guid>
+    <pubDate>{format_datetime(when)}</pubDate>
+    <description>{esc(about)}</description>
+  </item>''')
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>RecompHaven: latest releases</title>
+  <link>{SITE}/releases/</link>
+  <atom:link href="{SITE}/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>New releases of game recompilations, decompilations and native ports, from RecompHaven.</description>
+  <language>en</language>
+  <lastBuildDate>{format_datetime(dt.datetime.now(dt.timezone.utc))}</lastBuildDate>
+''' + '\n'.join(items) + '''
+</channel>
+</rss>
 '''
 
 
@@ -654,10 +784,17 @@ def main():
     os.makedirs(share_dir)
     home = os.path.join(share_dir, 'home.jpg')
     home_card(entries, games, home)
+    home_url = versioned(home, 'assets/share/home.jpg')
     with open(os.path.join(out, 'index.html'), encoding='utf-8') as f:
         index = f.read()
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
-        f.write(index.replace(f'{SITE}/assets/share/home.jpg', versioned(home, 'assets/share/home.jpg')))
+        f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url))
+
+    os.makedirs(os.path.join(out, 'releases'))
+    with open(os.path.join(out, 'releases', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(releases_page(entries, home_url, snapshot))
+    with open(os.path.join(out, 'feed.xml'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(feed(entries))
 
     for game in games:
         img = os.path.join(share_dir, game['slug'] + '.jpg')
@@ -667,7 +804,9 @@ def main():
         with open(os.path.join(folder, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
             f.write(page(game, versioned(img, f'assets/share/{game["slug"]}.jpg'), snapshot))
 
-    urls = [(f'{SITE}/', snapshot)] + [(f'{SITE}/games/{g["slug"]}/', g['updated'] or snapshot) for g in games]
+    latest = releases(entries)
+    urls = [(f'{SITE}/', snapshot), (f'{SITE}/releases/', latest[0]['versionDate'] if latest else snapshot)]
+    urls += [(f'{SITE}/games/{g["slug"]}/', g['updated'] or snapshot) for g in games]
     with open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8', newline='\n') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         f.writelines(f'  <url><loc>{u}</loc><lastmod>{d}</lastmod></url>\n' for u, d in urls)

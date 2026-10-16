@@ -22,9 +22,10 @@
 
   // A cover that fails to load turns into the initials placeholder.
   document.addEventListener('error', (ev) => {
-    const box = ev.target instanceof HTMLImageElement && ev.target.closest('.d-cover');
+    const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover, .d-cover');
     if (!box) return;
-    box.className = 'cover cover--lg cover--none';
+    if (box.classList.contains('d-cover')) box.className = 'cover cover--lg';
+    box.classList.add('cover--none');
     box.textContent = box.dataset.initials;
   }, true);
 })();

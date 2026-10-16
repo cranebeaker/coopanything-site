@@ -18,6 +18,7 @@
  *   started      repository created
  *   updated      last push to the repository
  *   stars        GitHub stars
+ *   starsWeek    stars gained in the last 7 days (tools/track_stars.py)
  *   features     widescreen | high-fps | mods | ray-tracing | multiplayer | online | launcher | steam-deck
  *                | keyboard-mouse | keyboard | mod-manager  (see tools/detect_features.py)
  *   ai           true when the project discloses substantial AI-generated code

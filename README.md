@@ -61,6 +61,22 @@ Every game gets a page at `recomphaven.com/games/<name>/`, linked from its detai
 
 None of this is committed: it's rebuilt on every deploy, so it follows the data. `_site/` is in `.gitignore`.
 
+## Latest releases and trending
+
+The front page opens with two panels, **Latest releases** and **Trending this week**.
+
+- **Latest releases** lists the newest `version` / `versionDate` in the data, so it updates with the nightly refresh on its own. The build also makes a full list at `/releases/` and an RSS feed at `/feed.xml`. The data only keeps each project's latest release, so a project that ships twice in one day shows its newer version.
+- **Trending this week** ranks projects by the GitHub stars they gained in the last 7 days (`starsWeek`), and there's a matching "Trending this week" sort. `tools/track_stars.py` counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
+
+### Posting new releases to Discord
+
+The nightly refresh can post each new release to a Discord channel, with its box art, tier and a link to the game's page. It stays off until you add a webhook:
+
+1. In Discord, open **Server Settings → Integrations → Webhooks → New Webhook**, pick the channel, and click **Copy Webhook URL**.
+2. On GitHub, open the repo's **Settings → Secrets and variables → Actions → New repository secret**. Name it `DISCORD_WEBHOOK_URL` and paste the URL.
+
+From the next night on, `tools/announce_releases.py` posts every release that changed since the previous refresh, as long as it's from the last few days. Releases you add by hand in a commit aren't posted. To see what it would post without posting, run `python tools/announce_releases.py --dry-run`.
+
 ## Keeping the data fresh
 
 Stars, last push and latest release come from GitHub. To refresh them:

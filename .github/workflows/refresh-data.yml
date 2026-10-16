@@ -1,7 +1,8 @@
 # Every night: fetches box art for entries that don't have a cover yet,
 # refreshes the GitHub stars, last push and latest release in data/recomps.js,
-# works out which operating systems new entries and new releases run on, and
-# commits whatever changed. Stages, genres and quality tiers stay manual:
+# works out which operating systems new entries and new releases run on,
+# counts each project's new stars this week, posts new releases to Discord
+# (once a webhook is set up), and commits whatever changed. Stages, genres and quality tiers stay manual:
 # the job summary lists new covers to check and entries worth a look.
 #
 # Pushes made with GITHUB_TOKEN don't start other workflows, so
@@ -48,15 +49,26 @@ jobs:
       - name: Detect keyboard/mouse support and mod managers for new entries
         run: python tools/detect_features.py
 
+      - name: Count this week's new stars
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/track_stars.py --summary "$GITHUB_STEP_SUMMARY"
+
+      # Does nothing until the repo has a DISCORD_WEBHOOK_URL secret (see the script).
+      - name: Post new releases to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python tools/announce_releases.py
+
       - name: Commit the data and covers if they changed
         run: |
-          if [ -z "$(git status --porcelain -- data/recomps.js assets/covers)" ]; then
+          if [ -z "$(git status --porcelain -- data/recomps.js data/stars-history.json assets/covers)" ]; then
             echo "Nothing changed."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/recomps.js assets/covers
+          git add data/recomps.js data/stars-history.json assets/covers
           git commit -m "Refresh GitHub stats and covers ($(date -u +%Y-%m-%d))"
           git pull --rebase
           git push

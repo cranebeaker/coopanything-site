@@ -18,6 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="RecompHaven: every game recompilation, released and in progress">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" type="application/rss+xml" title="RecompHaven: latest releases" href="https://recomphaven.com/feed.xml">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
@@ -54,6 +55,26 @@
 </header>
 
 <main>
+  <!-- feed.xml and releases/ are made by tools/build_pages.py, so they only exist on the built site. -->
+  <section class="wrap pulse" aria-label="What's new">
+    <div class="pulse__panel">
+      <div class="pulse__head">
+        <h2>Latest releases</h2>
+        <a class="pulse__link" href="feed.xml" title="Subscribe to new releases with RSS">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>RSS</a>
+        <a class="pulse__link" href="releases/">All releases →</a>
+      </div>
+      <ol id="latest-list" class="pulse__list"></ol>
+    </div>
+    <div class="pulse__panel">
+      <div class="pulse__head">
+        <h2>Trending this week</h2>
+        <button type="button" class="pulse__link" data-sort-trending>Sort by trending →</button>
+      </div>
+      <ol id="trending-list" class="pulse__list"></ol>
+    </div>
+  </section>
+
   <section class="controls" aria-label="Search, filter and sort">
     <div class="wrap controls__inner">
       <div class="controls__row">
