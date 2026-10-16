@@ -55,12 +55,14 @@
     'steam-deck': 'Steam Deck',
     'keyboard-mouse': 'Keyboard & mouse',
     keyboard: 'Keyboard',
+    'mod-manager': 'Mod manager',
   };
   // "Must have" chips: each matches any of its feature tags.
   const FEATURE_FILTERS = {
     widescreen: { label: 'Widescreen', tags: ['widescreen'] },
     'high-fps': { label: 'High frame rate', tags: ['high-fps'] },
     mods: { label: 'Mod support', tags: ['mods'] },
+    modmgr: { label: 'Mod manager', tags: ['mod-manager'], title: 'Find and install community mods through a mod manager or mod site such as Thunderstore' },
     multiplayer: { label: 'Multiplayer', tags: ['multiplayer'] },
     kbm: { label: 'Keyboard/mouse', tags: ['keyboard-mouse', 'keyboard'], title: 'Playable with a keyboard, with or without the mouse' },
   };

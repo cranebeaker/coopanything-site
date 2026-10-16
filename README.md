@@ -90,15 +90,18 @@ The script reads the file names on each project's newest GitHub release (for exa
 
 If it gets one wrong, set `platforms` yourself and `"platformsFrom": "manual"`; the script never changes those.
 
-## Keyboard and mouse
+## Keyboard, mouse and mod managers
 
-The "Keyboard/mouse" chip shows recomps you can play without a controller. Each entry's `features` holds `"keyboard-mouse"` when its project says keyboard and mouse both work in the game, or `"keyboard"` when only the keyboard does (for example, the mouse only works in menus).
+Two "Must have" chips read tags in each entry's `features`:
+
+- **Keyboard/mouse**: `"keyboard-mouse"` when the project says keyboard and mouse both work in the game, or `"keyboard"` when only the keyboard does (for example, the mouse only works in menus).
+- **Mod manager**: `"mod-manager"` when community mods can be found and installed through a mod manager or mod site, such as Thunderstore, r2modman, Hedge Mod Manager or an in-game mod browser.
 
 ```bash
-python tools/detect_input.py
+python tools/detect_features.py
 ```
 
-The script reads each project's README and its three newest release notes, skipping mentions like "keyboard support is planned" or "controller required", and records `"inputFrom": "github"` (or `"none"` when it found nothing). It only checks entries without `inputFrom`, so the nightly workflow picks up new ones. Add `--all` to recheck everything. To set one by hand, edit its `features` and set `"inputFrom": "manual"`; the script never changes those.
+The script reads each project's README and its three newest release notes, skipping mentions like "planned" or "controller required". It records how each was decided in `"inputFrom"` and `"modManagerFrom"`: `"github"` when it found something, `"none"` when it didn't. It only checks markers an entry doesn't have yet, so the nightly workflow picks up new entries; add `--all` to recheck everything. To set one by hand, edit `features` and set the marker to `"manual"`; the script never changes those.
 
 ## Sources and license
 

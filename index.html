@@ -48,6 +48,11 @@
         <label class="field"><span>Genre</span><select id="f-genre"></select></label>
         <label class="field"><span>Quality</span><select id="f-quality"></select></label>
         <label class="field"><span>Toolchain</span><select id="f-toolchain"></select></label>
+        <label class="toggle toggle--field" for="hide-ai" title="Hide projects that disclose a substantial share of AI-written code">
+          <input id="hide-ai" type="checkbox">
+          <span class="toggle__track" aria-hidden="true"></span>
+          Hide AI-assisted
+        </label>
       </div>
       <div class="controls__row controls__row--chips">
         <div class="chip-groups">
@@ -57,11 +62,6 @@
           </div>
           <div id="feature-chips" class="chips" role="group" aria-label="Must have"></div>
         </div>
-        <label class="toggle" for="hide-ai" title="Hide projects that disclose a substantial share of AI-written code">
-          <input id="hide-ai" type="checkbox">
-          <span class="toggle__track" aria-hidden="true"></span>
-          Hide AI-assisted
-        </label>
       </div>
     </div>
   </section>

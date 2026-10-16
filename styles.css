@@ -270,7 +270,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .search {
   position: relative;
-  flex: 1 1 260px;
+  flex: 1 1 220px;
   min-width: 0;
 }
 .search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; color: var(--muted); pointer-events: none; }
@@ -294,7 +294,9 @@ button, input, select { font: inherit; color: inherit; }
 }
 .field select {
   height: 42px;
+  width: 184px;
   max-width: 100%;
+  text-overflow: ellipsis;
   padding: 0 32px 0 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -494,6 +496,8 @@ button, input, select { font: inherit; color: inherit; }
 .facts .fact--wide { grid-column: span 2; }
 
 .chip-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+/* The AI switch sits at the end of the dropdown row, level with the select boxes. */
+.toggle--field { height: 42px; flex: none; margin-left: 4px; }
 .os-group { display: flex; align-items: center; gap: 8px; }
 .os-filter {
   display: inline-flex;
@@ -868,6 +872,7 @@ dialog::backdrop { background: var(--backdrop); }
   .controls__row > .field { flex: 1 1 calc(50% - 6px); }
   .field select { width: 100%; }
   .chip-groups, .os-group { width: 100%; }
+  .controls__row > .toggle--field { flex-basis: 100%; height: auto; margin-left: 0; }
   .os-filter { flex: 1; display: flex; }
   .os-filter button { flex: 1; justify-content: center; padding: 0 6px; }
   .results__actions { flex-wrap: wrap; width: 100%; justify-content: space-between; }
