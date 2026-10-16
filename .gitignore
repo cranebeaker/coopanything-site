@@ -1,0 +1,14 @@
+# Local Claude Code settings
+.claude/
+
+# Saved FontBolt page from making the logo; not part of the site
+LOGO/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RecompHaven</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Every game recompilation, released and in progress. Sort and filter by console, genre, quality and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#results">Skip to the list</a>
+
+<header class="masthead">
+  <div class="wrap masthead__top">
+    <div class="brand">
+      <h1 class="wordmark"><img src="assets/logo.png" alt="Re:Haven" width="1615" height="338"></h1>
+      <p class="tagline">Every game recompilation, released and in progress.</p>
+      <p class="asm" aria-hidden="true">MIPS · PowerPC · 65816 · SH-4 · x86 <span>→</span> native C</p>
+    </div>
+    <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
+      <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
+    </button>
+  </div>
+  <div class="wrap">
+    <div id="stage-tiles" class="stage-tiles" role="group" aria-label="Filter by stage"></div>
+  </div>
+</header>
+
+<main>
+  <section class="controls" aria-label="Search, filter and sort">
+    <div class="wrap controls__inner">
+      <div class="controls__row">
+        <div class="search">
+          <label for="q" class="sr-only">Search</label>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="q" type="search" placeholder="Search games, teams, toolchains" autocomplete="off" spellcheck="false">
+        </div>
+        <label class="field"><span>Console</span><select id="f-console"></select></label>
+        <label class="field"><span>Genre</span><select id="f-genre"></select></label>
+        <label class="field"><span>Quality</span><select id="f-quality"></select></label>
+        <label class="field"><span>Toolchain</span><select id="f-toolchain"></select></label>
+      </div>
+      <div class="controls__row controls__row--chips">
+        <div id="feature-chips" class="chips" role="group" aria-label="Must have"></div>
+        <label class="toggle" for="hide-ai">
+          <input id="hide-ai" type="checkbox">
+          <span class="toggle__track" aria-hidden="true"></span>
+          Hide AI-assisted projects
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section id="results" class="wrap results" tabindex="-1" aria-label="Recomps">
+    <div class="results__bar">
+      <p id="count" class="count" aria-live="polite"></p>
+      <div class="results__actions">
+        <button id="reset" class="text-btn" type="button">Clear filters</button>
+        <div class="sort-inline">
+          <label for="sort">Sort by</label>
+          <div class="sort-pair">
+            <select id="sort"></select>
+            <button id="sort-dir" class="dir-btn" type="button"></button>
+          </div>
+        </div>
+        <div class="segmented" role="group" aria-label="Layout">
+          <button type="button" data-view="table" aria-pressed="true">Table</button>
+          <button type="button" data-view="cards" aria-pressed="false">Cards</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="table-view" class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th scope="col" data-sort="title"><button type="button">Game</button></th>
+            <th scope="col" data-sort="console"><button type="button">Console</button></th>
+            <th scope="col" data-sort="genre"><button type="button">Genre</button></th>
+            <th scope="col" data-sort="stage"><button type="button">Stage</button></th>
+            <th scope="col" data-sort="quality"><button type="button">Quality</button></th>
+            <th scope="col" data-sort="toolchain"><button type="button">Toolchain</button></th>
+            <th scope="col" data-sort="release"><button type="button">Latest release</button></th>
+            <th scope="col" data-sort="updated"><button type="button">Last activity</button></th>
+            <th scope="col" data-sort="stars" class="num"><button type="button">Stars</button></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div id="card-view" class="cards" hidden></div>
+
+    <div id="empty" class="empty" hidden>
+      <p class="empty__title">No recomps match these filters.</p>
+      <p>Try a different search, or clear the filters to see all of them.</p>
+      <button id="empty-reset" class="btn" type="button">Clear filters</button>
+    </div>
+  </section>
+
+  <section class="wrap legend" aria-labelledby="legend-tiers">
+    <div class="legend__grid">
+      <div>
+        <h2 id="legend-tiers">Quality tiers</h2>
+        <div id="tier-list" class="tier-list"></div>
+        <p class="fine">Ratings start from each project's own status and release history, then get adjusted by hand for the flagship releases. They're a guide, not a review.</p>
+      </div>
+      <div class="legend__text">
+        <h2>What counts as a recomp</h2>
+        <p>A static recompilation translates a game's original machine code (MIPS on the N64 and PlayStation, PowerPC on the Xbox 360 and GameCube) into C or C++ ahead of time, then compiles it into a native program. No emulator runs while you play, which is how these ports add widescreen, high frame rates and mod support.</p>
+        <p>Decompilations, where people rebuild a game's source code by hand, are a different scene. A few standout ports made other ways are listed too, with Decompilation or Reimplementation as their toolchain.</p>
+        <h2>Stages</h2>
+        <dl id="stage-list" class="stage-list"></dl>
+        <h2>Activity</h2>
+        <dl class="stage-list">
+          <dt><span class="act act--active">Active</span></dt><dd>Code pushed in the last 60 days</dd>
+          <dt><span class="act act--quiet">Quiet</span></dt><dd>Last push 2 to 6 months ago</dd>
+          <dt><span class="act act--stalled">Stalled</span></dt><dd>No pushes for over 6 months</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap footer">
+  <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
+  <p>Data snapshot <time id="snapshot"></time>. Base data from <a href="https://github.com/nio03/unricopie">Recompendium</a> (MIT License, © 2026 Recompendium contributors), with repository stats from GitHub. Genres, stages and quality tiers are RecompHaven's own.</p>
+</footer>
+
+<dialog id="detail" aria-labelledby="d-title">
+  <div class="d-body" id="d-body"></div>
+</dialog>
+
+<script src="data/recomps.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Keep LF everywhere, so Windows edits and the nightly Linux refresh job
+# don't fight over line endings in data/recomps.js.
+* text=auto eol=lf
+*.png binary

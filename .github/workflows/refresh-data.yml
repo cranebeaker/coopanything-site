@@ -1,0 +1,43 @@
+# Refreshes the GitHub stars, last push and latest release in data/recomps.js
+# every night, and commits the file when it changed. Stages, genres and
+# quality tiers stay manual: the job summary lists entries worth a look.
+#
+# Pushes made with GITHUB_TOKEN don't start other workflows, so
+# deploy-pages.yml also runs on `workflow_run` of "Refresh data".
+name: Refresh data
+
+on:
+  schedule:
+    - cron: '23 4 * * *'   # 04:23 UTC every day
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Refresh GitHub stats
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/refresh_stats.py --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit data/recomps.js if it changed
+        run: |
+          if git diff --quiet -- data/recomps.js; then
+            echo "data/recomps.js is unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/recomps.js
+          git commit -m "Refresh GitHub stats ($(date -u +%Y-%m-%d))"
+          git pull --rebase
+          git push

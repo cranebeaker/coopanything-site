@@ -1,0 +1,51 @@
+# Publishes the site to GitHub Pages on every push to main, after each
+# nightly "Refresh data" run, and on demand. The refresh job pushes with
+# GITHUB_TOKEN, and those pushes don't start other workflows or Pages builds,
+# hence the workflow_run trigger.
+#
+# Repo setting: Settings → Pages → Build and deployment → Source: GitHub Actions.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: [Refresh data]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - uses: actions/configure-pages@v5
+
+      # Only the site itself goes live: not tools/, the README or the workflows.
+      - name: Collect the site files
+        run: |
+          mkdir _site
+          cp -r index.html styles.css app.js assets data _site/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
