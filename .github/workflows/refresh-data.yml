@@ -1,6 +1,7 @@
-# Every night: fetches box art for entries that don't have a cover yet, then
+# Every night: fetches box art for entries that don't have a cover yet,
 # refreshes the GitHub stars, last push and latest release in data/recomps.js,
-# and commits whatever changed. Stages, genres and quality tiers stay manual:
+# works out which operating systems new entries and new releases run on, and
+# commits whatever changed. Stages, genres and quality tiers stay manual:
 # the job summary lists new covers to check and entries worth a look.
 #
 # Pushes made with GITHUB_TOKEN don't start other workflows, so
@@ -39,6 +40,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/refresh_stats.py --summary "$GITHUB_STEP_SUMMARY"
+
+      # After the stats, so a new release tag triggers a fresh look at its downloads.
+      - name: Detect platforms for new entries and new releases
+        run: python tools/detect_platforms.py
 
       - name: Commit the data and covers if they changed
         run: |

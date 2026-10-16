@@ -448,7 +448,7 @@ button, input, select { font: inherit; color: inherit; }
 .grid th button {
   display: inline-flex; align-items: center; gap: 6px;
   width: 100%;
-  padding: 12px 10px 10px;
+  padding: 12px 8px 10px;
   border: 0; background: none;
   font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted);
@@ -462,15 +462,67 @@ button, input, select { font: inherit; color: inherit; }
 .grid th.num button { justify-content: flex-end; }
 
 .grid td {
-  padding: 11px 10px;
+  padding: 11px 8px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 
+.grid th .th-label {
+  display: block;
+  padding: 12px 8px 10px;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Operating systems ── */
+.os-icon { width: 15px; height: 15px; fill: currentColor; flex: none; display: block; }
+.os-set { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); }
+.os-slot.is-off { opacity: 0.14; }
+.os-set--inline { gap: 6px; margin-left: 2px; color: var(--muted); }
+.os-set--inline .os-icon { width: 13px; height: 13px; }
+
+.os-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.os-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.84rem; font-weight: 600;
+}
+.os-chip .os-icon { width: 13px; height: 13px; }
+.os-note { display: block; margin-top: 5px; }
+.facts .fact--wide { grid-column: span 2; }
+
+.chip-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; }
+.os-group { display: flex; align-items: center; gap: 8px; }
+.os-filter {
+  display: inline-flex;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.os-filter button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 12px;
+  border: 0; background: none;
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.os-filter button + button { border-left: 1px solid var(--line); }
+.os-filter button:hover { color: var(--fg); }
+.os-filter .os-icon { width: 13px; height: 13px; }
+.os-filter button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); font-weight: 600; }
+.os-filter button[data-os]:not([data-os=""])[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.os-filter button:focus-visible { outline-offset: -3px; }
+
 /* Long version tags and toolchain names end in "…"; the full text is on hover. */
 .trunc {
   display: inline-block;
-  max-width: 112px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -478,11 +530,12 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* Narrower windows drop the columns the detail panel also shows, so Stars always fits. */
-@media (max-width: 1240px) { .grid .col-tool { display: none; } }
-@media (max-width: 1100px) { .grid .col-release { display: none; } }
-@media (max-width: 940px) { .grid .col-genre { display: none; } }
-@media (max-width: 860px) { .grid .col-activity { display: none; } }
-@media (max-width: 760px) { .grid td:first-child { min-width: 190px; } }
+@media (max-width: 1320px) { .grid .col-tool { display: none; } }
+@media (max-width: 1190px) { .grid .col-release { display: none; } }
+@media (max-width: 1060px) { .grid .col-genre { display: none; } }
+@media (max-width: 920px) { .grid .col-activity { display: none; } }
+@media (max-width: 860px) { .table-wrap .grid td:first-child { min-width: 200px; } }
+@media (max-width: 800px) { .table-wrap .grid td:first-child { min-width: 170px; } .grid .col-os { display: none; } }
 .grid tbody tr:last-child td { border-bottom: 0; }
 .grid tbody tr { cursor: pointer; }
 .grid tbody tr:hover td { background: color-mix(in srgb, var(--surface-2) 70%, var(--surface)); }
@@ -490,7 +543,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .game { display: grid; gap: 2px; min-width: 0; max-width: 400px; }
 .game-cell { display: flex; align-items: center; gap: 12px; }
-.grid td:first-child { min-width: 300px; }
+.grid td:first-child { min-width: 280px; }
 
 /* Box art sits whole inside a square (boxes run from landscape N64 to tall DVD cases). */
 .cover {
@@ -516,7 +569,7 @@ button, input, select { font: inherit; color: inherit; }
 .cover--sm.cover--none { font-size: 1rem; }
 .cover--md.cover--none { font-size: 1.5rem; }
 .cover--lg.cover--none { font-size: 2.6rem; }
-.grid td:nth-child(3) { white-space: nowrap; }
+.grid td.col-genre { white-space: nowrap; font-size: 0.9rem; }
 .game__title {
   justify-self: start;
   padding: 0; border: 0; background: none;
@@ -814,6 +867,9 @@ dialog::backdrop { background: var(--backdrop); }
   .stage-tile__blurb { display: none; }
   .controls__row > .field { flex: 1 1 calc(50% - 6px); }
   .field select { width: 100%; }
+  .chip-groups, .os-group { width: 100%; }
+  .os-filter { flex: 1; display: flex; }
+  .os-filter button { flex: 1; justify-content: center; padding: 0 6px; }
   .results__actions { flex-wrap: wrap; width: 100%; justify-content: space-between; }
   .sort-inline { order: -1; flex: 1 1 100%; }
   .sort-pair { flex: 1; }

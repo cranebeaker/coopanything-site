@@ -78,6 +78,18 @@ python tools/fetch_covers.py --only castlevania-64 --force
 
 To use your own image, save it under `assets/covers/`, point `cover` at it and set `coverFrom` to `"manual"`. The script never touches those.
 
+## Operating systems
+
+Each entry's `platforms` lists the PC operating systems it runs on (`"windows"`, `"linux"`, `"macos"`), and the site's "Runs on" filter and icons read from it. `null` means the project doesn't say.
+
+```bash
+python tools/detect_platforms.py
+```
+
+The script reads the file names on each project's newest GitHub release (for example `-linux-x86_64.AppImage` or `-windows-x64.zip`) and records `"platformsFrom": "release"`. Projects without such downloads fall back to what their README says (`"readme"`), skipping mentions like "Linux is planned". It needs no token or extra packages. By default it only checks entries without platforms and release-based entries whose newest release changed; add `--all` to recheck everything. The nightly workflow runs it too.
+
+If it gets one wrong, set `platforms` yourself and `"platformsFrom": "manual"`; the script never changes those.
+
 ## Sources and license
 
 The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.
