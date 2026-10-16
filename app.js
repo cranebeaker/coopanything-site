@@ -25,6 +25,7 @@
     nds: { label: 'Nintendo DS', short: 'DS', color: '#8f2f74' },
     '3ds': { label: 'Nintendo 3DS', short: '3DS', color: '#a32a4e' },
     arcade: { label: 'Arcade', short: 'ARC', color: '#7a5a20' },
+    pc: { label: 'PC', short: 'PC', color: '#4b5563' },
   };
 
   const STAGES = {
