@@ -10,6 +10,7 @@
   const CONSOLES = {
     n64: { label: 'Nintendo 64', short: 'N64', color: '#b3242a' },
     x360: { label: 'Xbox 360', short: '360', color: '#107c10' },
+    xboxone: { label: 'Xbox One', short: 'XB1', color: '#0b5d3b' },
     ps1: { label: 'PlayStation', short: 'PS1', color: '#56607a' },
     snes: { label: 'Super Nintendo', short: 'SNES', color: '#6a4fb0' },
     xbox: { label: 'Xbox', short: 'XBOX', color: '#3e6a1d' },
