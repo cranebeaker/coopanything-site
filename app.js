@@ -53,8 +53,17 @@
     online: 'Online play',
     launcher: 'Launcher',
     'steam-deck': 'Steam Deck',
+    'keyboard-mouse': 'Keyboard & mouse',
+    keyboard: 'Keyboard',
   };
-  const FEATURE_FILTERS = ['widescreen', 'high-fps', 'mods', 'multiplayer'];
+  // "Must have" chips: each matches any of its feature tags.
+  const FEATURE_FILTERS = {
+    widescreen: { label: 'Widescreen', tags: ['widescreen'] },
+    'high-fps': { label: 'High frame rate', tags: ['high-fps'] },
+    mods: { label: 'Mod support', tags: ['mods'] },
+    multiplayer: { label: 'Multiplayer', tags: ['multiplayer'] },
+    kbm: { label: 'Keyboard/mouse', tags: ['keyboard-mouse', 'keyboard'], title: 'Playable with a keyboard, with or without the mouse' },
+  };
 
   // PC operating systems a recomp runs on (the "platforms" field). Logos from
   // Simple Icons (CC0); the 24×24 paths are filled with currentColor.
@@ -205,7 +214,7 @@
     if (state.toolchain && e.toolchain !== state.toolchain) return false;
     if (state.os && !(e.platforms || []).includes(state.os)) return false;
     if (!ignoreStage && state.stages.size && !state.stages.has(e.stage)) return false;
-    for (const f of state.features) if (!(e.features || []).includes(f)) return false;
+    for (const f of state.features) if (!FEATURE_FILTERS[f].tags.some((t) => (e.features || []).includes(t))) return false;
     if (state.hideAI && e.ai) return false;
     return true;
   }
@@ -361,8 +370,8 @@
     $('#os-filter').innerHTML = `<button type="button" data-os="" aria-pressed="true">All</button>` +
       OS_ORDER.map((k) => `<button type="button" data-os="${k}" aria-pressed="false" title="${osCount(k)} recomps run on ${OS[k].label}">${osIcon(k)}<span>${OS[k].label}</span></button>`).join('');
 
-    $('#feature-chips').innerHTML = '<span class="chips__label">Must have</span>' + FEATURE_FILTERS.map((f) =>
-      `<button type="button" class="chip" data-feature="${f}" aria-pressed="false">${FEATURES[f]}</button>`).join('');
+    $('#feature-chips').innerHTML = '<span class="chips__label">Must have</span>' + Object.entries(FEATURE_FILTERS).map(([f, c]) =>
+      `<button type="button" class="chip" data-feature="${f}" aria-pressed="false"${c.title ? ` title="${c.title}"` : ''}>${c.label}</button>`).join('');
 
     $('#tier-list').innerHTML = TIER_ORDER.map((t) => {
       const n = DATA.filter((e) => e.quality === t).length;
@@ -483,7 +492,7 @@
     for (const k of ['q', 'console', 'genre', 'quality', 'toolchain']) if (p.get(k)) state[k] = p.get(k);
     if (OS[p.get('os')]) state.os = p.get('os');
     (p.get('stage') || '').split(',').filter((s) => STAGES[s]).forEach((s) => state.stages.add(s));
-    (p.get('has') || '').split(',').filter((f) => FEATURES[f]).forEach((f) => state.features.add(f));
+    (p.get('has') || '').split(',').filter((f) => FEATURE_FILTERS[f]).forEach((f) => state.features.add(f));
     state.hideAI = p.get('noai') === '1';
     if (SORTS[p.get('sort')]) state.sort = p.get('sort');
     if (['asc', 'desc'].includes(p.get('dir'))) state.dir = p.get('dir');

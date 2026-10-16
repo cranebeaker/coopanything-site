@@ -90,6 +90,16 @@ The script reads the file names on each project's newest GitHub release (for exa
 
 If it gets one wrong, set `platforms` yourself and `"platformsFrom": "manual"`; the script never changes those.
 
+## Keyboard and mouse
+
+The "Keyboard/mouse" chip shows recomps you can play without a controller. Each entry's `features` holds `"keyboard-mouse"` when its project says keyboard and mouse both work in the game, or `"keyboard"` when only the keyboard does (for example, the mouse only works in menus).
+
+```bash
+python tools/detect_input.py
+```
+
+The script reads each project's README and its three newest release notes, skipping mentions like "keyboard support is planned" or "controller required", and records `"inputFrom": "github"` (or `"none"` when it found nothing). It only checks entries without `inputFrom`, so the nightly workflow picks up new ones. Add `--all` to recheck everything. To set one by hand, edit its `features` and set `"inputFrom": "manual"`; the script never changes those.
+
 ## Sources and license
 
 The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.

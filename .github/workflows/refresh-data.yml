@@ -45,6 +45,9 @@ jobs:
       - name: Detect platforms for new entries and new releases
         run: python tools/detect_platforms.py
 
+      - name: Detect keyboard and mouse support for new entries
+        run: python tools/detect_input.py
+
       - name: Commit the data and covers if they changed
         run: |
           if [ -z "$(git status --porcelain -- data/recomps.js assets/covers)" ]; then

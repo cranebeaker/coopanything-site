@@ -350,7 +350,7 @@ button, input, select { font: inherit; color: inherit; }
 .chips__label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
 .chip {
   height: 32px;
-  padding: 0 13px;
+  padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
@@ -493,7 +493,7 @@ button, input, select { font: inherit; color: inherit; }
 .os-note { display: block; margin-top: 5px; }
 .facts .fact--wide { grid-column: span 2; }
 
-.chip-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; }
+.chip-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .os-group { display: flex; align-items: center; gap: 8px; }
 .os-filter {
   display: inline-flex;
