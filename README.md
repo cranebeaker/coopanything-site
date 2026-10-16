@@ -66,7 +66,21 @@ None of this is committed: it's rebuilt on every deploy, so it follows the data.
 The front page opens with two panels, **Latest releases** and **Trending this week**.
 
 - **Latest releases** lists the newest `version` / `versionDate` in the data, so it updates with the nightly refresh on its own. The build also makes a full list at `/releases/` and an RSS feed at `/feed.xml`. The data only keeps each project's latest release, so a project that ships twice in one day shows its newer version.
-- **Trending this week** ranks projects by the GitHub stars they gained in the last 7 days (`starsWeek`), and there's a matching "Trending this week" sort. `tools/track_stars.py` counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
+- **Trending this week** ranks projects by how many people opened them on RecompHaven in the last 7 days (`visitsWeek`, see "Counting visits" below), and there's a matching "Trending this week" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
+- **Stars this week** (the green "+N" next to star counts) come from `tools/track_stars.py`, which counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
+
+### Counting visits
+
+The site sends one event to [GoatCounter](https://www.goatcounter.com/) per project when someone opens its details, opens a game page that has only that project, or follows its repository, website or release-notes link. GoatCounter counts each visitor once per event, so the numbers are close to people rather than clicks. It uses no cookies and keeps no personal data, so the site needs no consent banner. Each night `tools/track_visits.py` reads the last 7 days of counts and stores them as `visitsWeek`.
+
+It's off until you set it up:
+
+1. Sign up at [goatcounter.com](https://www.goatcounter.com/signup) (free for non-commercial sites). The site code you pick becomes your dashboard address, like `recomphaven.goatcounter.com`.
+2. Put that code in `GOATCOUNTER` near the top of `tools/build_pages.py`. The next deploy adds GoatCounter's script to every page, and a line about it to the footer.
+3. In GoatCounter, open your user menu → **API** → **New API key**, and allow it to read statistics. Copy the key.
+4. On GitHub, open the repo's **Settings → Secrets and variables → Actions → New repository secret**. Name it `GOATCOUNTER_TOKEN` and paste the key.
+
+Trending switches to visitors after the first nightly refresh that finds any. GoatCounter's dashboard also shows page views, referrers and the like. Visits from `localhost` aren't counted, so testing locally doesn't skew the numbers.
 
 ### Posting new releases to Discord
 

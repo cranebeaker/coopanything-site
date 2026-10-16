@@ -47,6 +47,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from refresh_stats import DATA, ROOT, load  # noqa: E402
 
 SITE = 'https://recomphaven.com'
+# GoatCounter site code (the "recomphaven" in recomphaven.goatcounter.com), or '' for no
+# visit counting. It counts the visits that rank Trending; see tools/track_visits.py.
+GOATCOUNTER = 'recomphaven'
 SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml'
 STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
@@ -292,9 +295,9 @@ def card(e, game, rows):
         'title': f'[Correction]: {e["title"]}', 'game': e['title'], 'url': e.get('repo') or e.get('website') or ''})
     links = []
     if e.get('repo'):
-        links.append(f'<a class="btn" href="{esc(e["repo"])}" target="_blank" rel="noopener">Repository ↗</a>')
+        links.append(f'<a class="btn" href="{esc(e["repo"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Repository ↗</a>')
     if e.get('website'):
-        links.append(f'<a class="btn btn--ghost" href="{esc(e["website"])}" target="_blank" rel="noopener">Website ↗</a>')
+        links.append(f'<a class="btn btn--ghost" href="{esc(e["website"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Website ↗</a>')
     links.append(f'<a class="d-correct" href="{esc(correction)}" target="_blank" rel="noopener">Suggest a correction ↗</a>')
     cells.append(f'<div class="gp-cell gp-links">{"".join(links)}</div>')
 
@@ -349,8 +352,8 @@ def page(game, share_url, snapshot):
       <h2 id="gp-pick-title"><a href="#{esc(pick['id'])}">{esc(pick['project'])}</a>{by}</h2>
       <p>{esc(reason(game))}</p>
     </div>
-    {f'<a class="btn" href="{esc(pick["repo"])}" target="_blank" rel="noopener">Repository ↗</a>' if pick.get('repo') else
-     f'<a class="btn" href="{esc(pick["website"])}" target="_blank" rel="noopener">Website ↗</a>' if pick.get('website') else ''}
+    {f'<a class="btn" href="{esc(pick["repo"])}" target="_blank" rel="noopener" data-visit="{esc(pick["id"])}">Repository ↗</a>' if pick.get('repo') else
+     f'<a class="btn" href="{esc(pick["website"])}" target="_blank" rel="noopener" data-visit="{esc(pick["id"])}">Website ↗</a>' if pick.get('website') else ''}
   </section>
 
   <h2 class="gp-h2">Every project, side by side</h2>'''
@@ -375,13 +378,30 @@ def page(game, share_url, snapshot):
   <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
     return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
                     image_alt=f'{name} on RecompHaven: {pick["project"]}, {pick["quality"]} tier',
-                    body=body, snapshot=snapshot)
+                    body=body, snapshot=snapshot, visit=None if multi else pick['id'])
 
 
-def document(*, title, description, path, share_url, image_alt, body, snapshot):
-    """A whole page in the site's header and footer. path is from the site root, like "games/pt/"."""
+def analytics_tag():
+    """GoatCounter's counter, when GOATCOUNTER is set. It counts nothing on localhost."""
+    if not GOATCOUNTER:
+        return ''
+    return (f'<script data-goatcounter="https://{GOATCOUNTER}.goatcounter.com/count" '
+            'async src="https://gc.zgo.at/count.js"></script>\n')
+
+
+def analytics_note():
+    if not GOATCOUNTER:
+        return ''
+    return (f'  <p>Visits to each project are counted with <a href="https://www.goatcounter.com/">GoatCounter</a>, '
+            'without cookies or personal data, to rank Trending.</p>\n')
+
+
+def document(*, title, description, path, share_url, image_alt, body, snapshot, visit=None):
+    """A whole page in the site's header and footer. path is from the site root, like "games/pt/".
+    visit: the id of a project to count a visit for when the page opens."""
     root = '../' * path.count('/')
     url = f'{SITE}/{path}'
+    body_attr = f' data-visit="{esc(visit)}"' if visit else ''
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -409,8 +429,8 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="{root}styles.css">
-</head>
-<body>
+{analytics_tag()}</head>
+<body{body_attr}>
 <a class="skip" href="#main">Skip to the content</a>
 
 <header class="masthead masthead--slim">
@@ -436,7 +456,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot):
 <footer class="wrap footer">
   <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
   <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a>.</p>
-</footer>
+{analytics_note()}</footer>
 
 <script src="{root}game.js"></script>
 </body>
@@ -487,7 +507,7 @@ def releases_page(entries, share_url, snapshot):
                 cover = (f'<span class="cover cover--sm cover--none" style="--c:{c["color"]}" aria-hidden="true">'
                          f'{esc(initials(e["title"]))}</span>')
             notes = release_url(e)
-            notes = (f'<a class="rl-notes" href="{esc(notes)}" target="_blank" rel="noopener">Release notes ↗</a>'
+            notes = (f'<a class="rl-notes" href="{esc(notes)}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Release notes ↗</a>'
                      if notes else '<span></span>')
             rows.append(f'''      <li class="rl-row">
         <time class="rl-date" datetime="{e['versionDate']}">{d:%b} {d.day}</time>
@@ -788,7 +808,9 @@ def main():
     with open(os.path.join(out, 'index.html'), encoding='utf-8') as f:
         index = f.read()
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
-        f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url))
+        f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url)
+                .replace('</head>', analytics_tag() + '</head>', 1)
+                .replace('</footer>', analytics_note() + '</footer>', 1))
 
     os.makedirs(os.path.join(out, 'releases'))
     with open(os.path.join(out, 'releases', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:

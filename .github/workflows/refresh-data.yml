@@ -1,8 +1,8 @@
 # Every night: fetches box art for entries that don't have a cover yet,
 # refreshes the GitHub stars, last push and latest release in data/recomps.js,
 # works out which operating systems new entries and new releases run on,
-# counts each project's new stars this week, posts new releases to Discord
-# (once a webhook is set up), and commits whatever changed. Stages, genres and quality tiers stay manual:
+# counts each project's new stars and visitors this week, posts new releases
+# to Discord (once a webhook is set up), and commits whatever changed. Stages, genres and quality tiers stay manual:
 # the job summary lists new covers to check and entries worth a look.
 #
 # Pushes made with GITHUB_TOKEN don't start other workflows, so
@@ -53,6 +53,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python tools/track_stars.py --summary "$GITHUB_STEP_SUMMARY"
+
+      # Does nothing until GoatCounter is set up (README: "Counting visits").
+      - name: Count this week's visitors
+        env:
+          GOATCOUNTER_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}
+        run: python tools/track_visits.py --summary "$GITHUB_STEP_SUMMARY"
 
       # Does nothing until the repo has a DISCORD_WEBHOOK_URL secret (see the script).
       - name: Post new releases to Discord

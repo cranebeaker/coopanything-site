@@ -30,14 +30,19 @@
   const OS_ORDER = Object.keys(OS);
   const PLATFORM_SOURCE = TABLES.platformSource;
 
+  // Trending ranks by people who opened each project here this week (visitsWeek, from
+  // tools/track_visits.py). Until there are any, it uses GitHub stars gained this week
+  // (starsWeek, from tools/track_stars.py).
+  const BY_VISITS = DATA.some((e) => e.visitsWeek > 0);
+  const trendOf = (e) => (BY_VISITS ? e.visitsWeek : e.starsWeek);
+
   const SORTS = {
     quality: { label: 'Quality', dir: 'asc', get: (e) => TIER_ORDER.indexOf(e.quality), dirs: ['Best first', 'Worst first'] },
     updated: { label: 'Last activity', dir: 'desc', get: (e) => e.updated, dirs: ['Oldest first', 'Newest first'] },
     release: { label: 'Latest release', dir: 'desc', get: (e) => e.versionDate, dirs: ['Oldest first', 'Newest first'] },
     started: { label: 'Project start', dir: 'desc', get: (e) => e.started, dirs: ['Oldest first', 'Newest first'] },
     stars: { label: 'GitHub stars', dir: 'desc', get: (e) => e.stars, dirs: ['Fewest first', 'Most first'] },
-    // starsWeek: stars gained in the last 7 days, from tools/track_stars.py.
-    trending: { label: 'Trending this week', dir: 'desc', get: (e) => e.starsWeek, dirs: ['Fewest first', 'Most first'] },
+    trending: { label: 'Trending this week', dir: 'desc', get: (e) => trendOf(e), dirs: ['Fewest first', 'Most first'] },
     title: { label: 'Name', dir: 'asc', get: (e) => e.title, dirs: ['A to Z', 'Z to A'] },
     year: { label: 'Original release', dir: 'asc', get: (e) => e.year, dirs: ['Oldest first', 'Newest first'] },
     console: { label: 'Console', dir: 'asc', get: (e) => consoleOf(e).label, dirs: ['A to Z', 'Z to A'] },
@@ -62,6 +67,20 @@
   const SLUG = new Map(DATA.map((e) => [e.id, slugOf(e.title)]));
   const PROJECTS_PER_GAME = new Map();
   SLUG.forEach((s) => PROJECTS_PER_GAME.set(s, (PROJECTS_PER_GAME.get(s) || 0) + 1));
+
+  // Visits for Trending (tools/track_visits.py): one GoatCounter event per project, sent
+  // when its details open or someone follows its repository or website link. GoatCounter
+  // counts each visitor once per event. Its script is only on the built site, once set up.
+  function countVisit(e) {
+    const send = () => {
+      try {
+        window.goatcounter.count({ path: `recomp/${e.id}`, title: `${e.title} · ${e.project || e.title}`, event: true });
+      } catch { /* not loaded */ }
+    };
+    // A link straight to a project opens it before GoatCounter's script has loaded.
+    if ((window.goatcounter && window.goatcounter.count) || document.readyState === 'complete') send();
+    else window.addEventListener('load', send, { once: true });
+  }
 
   const DEFAULTS = { q: '', console: '', genre: '', quality: '', toolchain: '', os: '', sort: 'quality', dir: 'asc' };
 
@@ -368,8 +387,8 @@
   const LATEST = DATA.filter((e) => e.versionDate)
     .sort((a, b) => b.versionDate.localeCompare(a.versionDate) || (b.stars || 0) - (a.stars || 0))
     .slice(0, 5);
-  const TRENDING = DATA.filter((e) => e.starsWeek >= 2)
-    .sort((a, b) => b.starsWeek - a.starsWeek || (b.stars || 0) - (a.stars || 0))
+  const TRENDING = DATA.filter((e) => trendOf(e) >= 2)
+    .sort((a, b) => trendOf(b) - trendOf(a) || (b.stars || 0) - (a.stars || 0))
     .slice(0, 5);
 
   function pulseRow(e, sub, meta) {
@@ -383,8 +402,9 @@
       `${esc(e.project || '')} <span class="mono">${esc(e.version || '')}</span>`,
       `<span title="${esc(fmtDate(e.versionDate))}">${esc(relTime(e.versionDate))}</span>`)).join('');
     $('#trending-list').innerHTML = TRENDING.length
-      ? TRENDING.map((e) => pulseRow(e, esc(e.project || ''),
-        `<span class="gain">+${e.starsWeek.toLocaleString('en')}</span> stars`)).join('')
+      ? TRENDING.map((e) => pulseRow(e, esc(e.project || ''), BY_VISITS
+        ? `<span title="People who opened this project on RecompHaven in the last 7 days">${e.visitsWeek.toLocaleString('en')} visitors</span>`
+        : `<span title="GitHub stars gained in the last 7 days"><span class="gain">+${e.starsWeek.toLocaleString('en')}</span> stars</span>`)).join('')
       : `<li class="pulse__empty">${DATA.some((e) => e.starsWeek != null)
         ? 'A quiet week: no project has gained more than a star.'
         : 'Trending shows up once the nightly update has counted this week’s stars.'}</li>`;
@@ -439,8 +459,8 @@
       ${e.requires ? `<div class="d-section"><h3>What you need</h3><p class="d-note">${esc(e.requires)}</p></div>` : ''}
       ${e.ai ? '<div class="d-section"><p class="d-note">This project discloses that a substantial share of its code was written with AI tools.</p></div>' : ''}
       <div class="d-links">
-        ${e.repo ? `<a class="btn" href="${esc(e.repo)}" target="_blank" rel="noopener">Open repository ↗</a>` : ''}
-        ${e.website ? `<a class="btn btn--ghost" href="${esc(e.website)}" target="_blank" rel="noopener">Project website ↗</a>` : ''}
+        ${e.repo ? `<a class="btn" href="${esc(e.repo)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Open repository ↗</a>` : ''}
+        ${e.website ? `<a class="btn btn--ghost" href="${esc(e.website)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Project website ↗</a>` : ''}
         <span class="d-minor">
           ${siblings > 1 ? '' : `<a class="d-correct" href="games/${slug}/">Game page</a>`}
           <a class="d-correct" href="${esc(correctionUrl(e))}" target="_blank" rel="noopener">Suggest a correction ↗</a>
@@ -452,6 +472,7 @@
     }
     dialog.scrollTop = 0;
     if (push) setHash(e.id);
+    countVisit(e);
   }
 
   function closeDetail() {
@@ -466,6 +487,12 @@
     box.classList.add('cover--none');
     box.textContent = box.dataset.initials;
   }, true);
+
+  document.addEventListener('click', (ev) => {
+    const link = ev.target.closest('a[data-visit]');
+    const e = link && DATA.find((x) => x.id === link.dataset.visit);
+    if (e) countVisit(e);
+  });
 
   dialog.addEventListener('close', () => setHash(''));
   dialog.addEventListener('click', (ev) => {

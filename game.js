@@ -20,6 +20,20 @@
   darkMQ && darkMQ.addEventListener && darkMQ.addEventListener('change', sync);
   sync();
 
+  // Visits for Trending (tools/track_visits.py): one GoatCounter event per project, for a
+  // game page with a single project and for any project's repository or website link.
+  // GoatCounter's script is only on the built site, and only once it's set up.
+  const countVisit = (id) => {
+    try { window.goatcounter.count({ path: `recomp/${id}`, event: true }); } catch { /* not loaded */ }
+  };
+  document.addEventListener('click', (ev) => {
+    const link = ev.target.closest('a[data-visit]');
+    if (link) countVisit(link.dataset.visit);
+  });
+  if (document.body.dataset.visit) {
+    window.addEventListener('load', () => countVisit(document.body.dataset.visit));
+  }
+
   // A cover that fails to load turns into the initials placeholder.
   document.addEventListener('error', (ev) => {
     const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover, .d-cover');
