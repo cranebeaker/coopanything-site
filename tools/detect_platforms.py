@@ -39,7 +39,7 @@ REPO_RE = re.compile(r'^https://github\.com/([^/]+/[^/#?]+)')
 IGNORE_ASSET = re.compile(r'\.(sha\d+|sig|asc|txt|md|json|yml|yaml|pdb|sym|apk|ipa|nro|nsp|vpk|pkg)$|source code', re.I)
 
 WIN_TOKENS = {'windows', 'win', 'win64', 'win32', 'win10', 'win11', 'msvc', 'mingw', 'uwp'}
-LINUX_TOKENS = {'linux', 'appimage', 'ubuntu', 'debian', 'fedora', 'steamdeck', 'steamos', 'flatpak'}
+LINUX_TOKENS = {'linux', 'lin64', 'lin32', 'appimage', 'ubuntu', 'debian', 'fedora', 'steamdeck', 'steamos', 'flatpak'}
 MAC_TOKENS = {'macos', 'mac', 'osx', 'darwin', 'macosx', 'applesilicon'}
 
 README_OS = {
