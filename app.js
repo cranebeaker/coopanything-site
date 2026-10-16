@@ -223,14 +223,14 @@
           <span class="game__sub">${subline(e)}</span>
         </div></div></td>
         <td>${ctag(e)}</td>
-        <td><div class="stack"><span>${esc(e.genre)}</span><span class="small muted">${e.year || ''}</span></div></td>
+        <td class="col-genre"><div class="stack"><span>${esc(e.genre)}</span><span class="small muted">${e.year || ''}</span></div></td>
         <td>${stagePill(e)}</td>
         <td>${tierTile(e)}</td>
-        <td><span class="mono">${esc(e.toolchain)}</span></td>
-        <td>${e.version || e.versionDate
-          ? `<div class="stack"><span class="mono">${esc(e.version || 'Release')}</span><span class="small muted">${esc(fmtDate(e.versionDate))}</span></div>`
+        <td class="col-tool"><span class="mono trunc" title="${esc(e.toolchain)}">${esc(e.toolchain)}</span></td>
+        <td class="col-release">${e.version || e.versionDate
+          ? `<div class="stack"><span class="mono trunc" title="${esc(e.version || 'Release')}">${esc(e.version || 'Release')}</span><span class="small muted">${esc(fmtDate(e.versionDate))}</span></div>`
           : '<span class="muted">No release</span>'}</td>
-        <td class="small">${actTag(e)}</td>
+        <td class="small col-activity">${actTag(e)}</td>
         <td class="num"><span class="mono">${fmtStars(e.stars)}</span></td>
       </tr>`).join('');
 

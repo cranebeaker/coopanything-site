@@ -404,25 +404,31 @@ button, input, select { font: inherit; color: inherit; }
 .segmented button + button { border-left: 1px solid var(--line); }
 .segmented button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); }
 
+/* If the table is still wider than its frame (narrow screens), soft shadows at
+   the edges show there's more to scroll to. */
 .table-wrap {
   overflow-x: auto;
-  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.16), transparent) left / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.16), transparent) right / 14px 100% no-repeat scroll,
+    var(--surface);
 }
 
-.grid { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1040px; }
+.grid { width: 100%; border-collapse: separate; border-spacing: 0; }
 .grid th {
   padding: 0;
   text-align: left;
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
   white-space: nowrap;
 }
 .grid th button {
   display: inline-flex; align-items: center; gap: 6px;
   width: 100%;
-  padding: 12px 12px 10px;
+  padding: 12px 10px 10px;
   border: 0; background: none;
   font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted);
@@ -436,10 +442,27 @@ button, input, select { font: inherit; color: inherit; }
 .grid th.num button { justify-content: flex-end; }
 
 .grid td {
-  padding: 11px 12px;
+  padding: 11px 10px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
+
+/* Long version tags and toolchain names end in "…"; the full text is on hover. */
+.trunc {
+  display: inline-block;
+  max-width: 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* Narrower windows drop the columns the detail panel also shows, so Stars always fits. */
+@media (max-width: 1240px) { .grid .col-tool { display: none; } }
+@media (max-width: 1100px) { .grid .col-release { display: none; } }
+@media (max-width: 940px) { .grid .col-genre { display: none; } }
+@media (max-width: 860px) { .grid .col-activity { display: none; } }
+@media (max-width: 760px) { .grid td:first-child { min-width: 190px; } }
 .grid tbody tr:last-child td { border-bottom: 0; }
 .grid tbody tr { cursor: pointer; }
 .grid tbody tr:hover td { background: color-mix(in srgb, var(--surface-2) 70%, var(--surface)); }
@@ -447,7 +470,7 @@ button, input, select { font: inherit; color: inherit; }
 
 .game { display: grid; gap: 2px; min-width: 0; max-width: 400px; }
 .game-cell { display: flex; align-items: center; gap: 12px; }
-.grid td:first-child { min-width: 350px; }
+.grid td:first-child { min-width: 300px; }
 
 /* Box art sits whole inside a square (boxes run from landscape N64 to tall DVD cases). */
 .cover {
