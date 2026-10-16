@@ -690,7 +690,19 @@ dialog {
 dialog::backdrop { background: var(--backdrop); }
 
 .d-body { display: grid; gap: 18px; padding: 22px 24px 24px; }
-.d-head { display: flex; align-items: flex-start; gap: 18px; padding-right: 44px; }
+.d-head { display: flex; align-items: flex-start; gap: 20px; padding-right: 44px; }
+
+/* The whole box at its own shape: tall DVD cases and wide N64 boxes alike. */
+.d-cover { flex: none; width: 180px; margin: 0; }
+.d-cover img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2), 0 6px 18px rgb(0 0 0 / 0.18);
+}
 .d-head__text { display: grid; gap: 8px; min-width: 0; }
 .d-head__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 0.85rem; }
 .d-title {
@@ -766,7 +778,9 @@ dialog::backdrop { background: var(--backdrop); }
   .d-body { padding: 18px 16px 20px; }
   .cover--lg { width: 88px; height: 88px; }
   .cover--lg.cover--none { font-size: 1.8rem; }
-  .d-head { gap: 14px; }
+  .d-head { flex-direction: column; gap: 14px; }
+  .d-cover { width: auto; }
+  .d-cover img { max-width: min(220px, 70vw); max-height: 240px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

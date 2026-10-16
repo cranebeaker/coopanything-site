@@ -145,6 +145,13 @@
       : `<span ${attrs} aria-hidden="true">${esc(initials(e.title))}</span>`;
   }
 
+  // The detail panel shows the whole box at its own shape; no cover keeps the square tile.
+  function fullCover(e) {
+    if (!e.cover) return coverTile(e, 'lg');
+    return `<figure class="d-cover" style="--c:${consoleOf(e).color}" data-initials="${esc(initials(e.title))}">
+      <img src="${esc(e.cover)}" alt="Box art for ${esc(e.title)}" decoding="async"></figure>`;
+  }
+
   function subline(e) {
     const bits = [e.project, e.team && e.team !== e.project ? e.team : null].filter(Boolean);
     return `${esc(bits.join(' · '))}${aiTag(e)}`;
@@ -351,7 +358,7 @@
     $('#d-body').innerHTML = `
       <button type="button" class="d-close" data-close aria-label="Close">×</button>
       <div class="d-head">
-        ${coverTile(e, 'lg')}
+        ${fullCover(e)}
         <div class="d-head__text">
           <div class="d-head__meta">${ctag(e)}<span>${esc(c.label)}</span>${e.year ? `<span>· ${e.year}</span>` : ''}${e.developer ? `<span>· ${esc(e.developer)}</span>` : ''}</div>
           <h2 class="d-title" id="d-title">${esc(e.title)}</h2>
@@ -395,8 +402,9 @@
 
   // A cover that fails to load turns into the initials placeholder.
   document.addEventListener('error', (ev) => {
-    const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover');
+    const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover, .d-cover');
     if (!box) return;
+    if (box.classList.contains('d-cover')) box.className = 'cover cover--lg';
     box.classList.add('cover--none');
     box.textContent = box.dataset.initials;
   }, true);
