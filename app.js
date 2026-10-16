@@ -94,6 +94,14 @@
     toolchain: { label: 'Toolchain', dir: 'asc', get: (e) => e.toolchain, dirs: ['A to Z', 'Z to A'] },
   };
 
+  // GitHub issue form for new games and corrections (.github/ISSUE_TEMPLATE/submit-a-game.yml).
+  const SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml';
+  const correctionUrl = (e) => `${SUBMIT_URL}&${new URLSearchParams({
+    title: `[Correction]: ${e.title}`,
+    game: e.title,
+    url: e.repo || e.website || '',
+  })}`;
+
   const DEFAULTS = { q: '', console: '', genre: '', quality: '', toolchain: '', os: '', sort: 'quality', dir: 'asc' };
 
   const state = {
@@ -436,10 +444,11 @@
       ${(e.features || []).length ? `<div class="d-section"><h3>Features</h3><div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div></div>` : ''}
       ${e.requires ? `<div class="d-section"><h3>What you need</h3><p class="d-note">${esc(e.requires)}</p></div>` : ''}
       ${e.ai ? '<div class="d-section"><p class="d-note">This project discloses that a substantial share of its code was written with AI tools.</p></div>' : ''}
-      ${e.repo || e.website ? `<div class="d-links">
+      <div class="d-links">
         ${e.repo ? `<a class="btn" href="${esc(e.repo)}" target="_blank" rel="noopener">Open repository ↗</a>` : ''}
         ${e.website ? `<a class="btn btn--ghost" href="${esc(e.website)}" target="_blank" rel="noopener">Project website ↗</a>` : ''}
-      </div>` : ''}`;
+        <a class="d-correct" href="${esc(correctionUrl(e))}" target="_blank" rel="noopener">Suggest a correction ↗</a>
+      </div>`;
 
     if (!dialog.open) {
       if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');

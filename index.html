@@ -25,10 +25,16 @@
       <p class="tagline">Every game recompilation, released and in progress.</p>
       <p class="asm" aria-hidden="true">MIPS · PowerPC · 65816 · SH-4 · x86 <span>→</span> native C</p>
     </div>
-    <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
-      <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
-      <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
-    </button>
+    <div class="masthead__actions">
+      <a class="submit-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener" title="Suggest a missing recomp, decomp or port, or a correction (opens a form on GitHub)">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span>Submit a game</span>
+      </a>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
+        <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
+      </button>
+    </div>
   </div>
   <div class="wrap">
     <div id="stage-tiles" class="stage-tiles" role="group" aria-label="Filter by stage"></div>
@@ -109,7 +115,7 @@
 
     <div id="empty" class="empty" hidden>
       <p class="empty__title">No recomps match these filters.</p>
-      <p>Try a different search, or clear the filters to see all of them.</p>
+      <p>Try a different search, or clear the filters to see all of them. If a recomp is missing, <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">submit it</a>.</p>
       <button id="empty-reset" class="btn" type="button">Clear filters</button>
     </div>
   </section>
@@ -139,6 +145,7 @@
 </main>
 
 <footer class="wrap footer">
+  <p>Missing a recomp, or spotted a mistake? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit it on GitHub</a>.</p>
   <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
   <p>Data snapshot <time id="snapshot"></time>. Base data from <a href="https://github.com/nio03/unricopie">Recompendium</a> (MIT License, © 2026 Recompendium contributors), with repository stats from GitHub. Genres, stages and quality tiers are RecompHaven's own. Box art comes from the <a href="https://github.com/libretro-thumbnails/libretro-thumbnails">libretro thumbnails</a> project and Wikipedia, and belongs to each game's publisher. Operating system support comes from each project's GitHub releases and README; logos from <a href="https://simpleicons.org/">Simple Icons</a>.</p>
 </footer>

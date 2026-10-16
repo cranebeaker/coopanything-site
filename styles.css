@@ -179,6 +179,23 @@ button, input, select { font: inherit; color: inherit; }
 }
 .asm span { color: var(--accent); font-weight: 600; }
 
+.masthead__actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.submit-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 42px;
+  padding: 0 18px 0 15px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.submit-btn:hover { filter: brightness(1.1); }
+
+.d-correct { margin-left: auto; align-self: center; font-size: 0.85rem; color: var(--muted); }
+.d-correct:hover { color: var(--accent); }
+
 .icon-btn {
   flex: none;
   display: grid; place-items: center;
@@ -880,6 +897,9 @@ dialog::backdrop { background: var(--backdrop); }
   .sort-pair { flex: 1; }
   .sort-pair select { flex: 1; min-width: 0; }
   .d-body { padding: 18px 16px 20px; }
+  .submit-btn { width: 42px; padding: 0; justify-content: center; }
+  .submit-btn span { display: none; }
+  .d-correct { margin-left: 0; flex-basis: 100%; }
   .cover--lg { width: 88px; height: 88px; }
   .cover--lg.cover--none { font-size: 1.8rem; }
   .d-head { flex-direction: column; gap: 14px; }

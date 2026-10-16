@@ -103,6 +103,10 @@ python tools/detect_features.py
 
 The script reads each project's README and its three newest release notes, skipping mentions like "planned" or "controller required". It records how each was decided in `"inputFrom"` and `"modManagerFrom"`: `"github"` when it found something, `"none"` when it didn't. It only checks markers an entry doesn't have yet, so the nightly workflow picks up new entries; add `--all` to recheck everything. To set one by hand, edit `features` and set the marker to `"manual"`; the script never changes those.
 
+## Submissions
+
+The site's "Submit a game" button, the footer link and each game's "Suggest a correction" link open the GitHub issue form in `.github/ISSUE_TEMPLATE/submit-a-game.yml`. Corrections arrive with the game's name and link filled in. Each submission shows up under the repo's **Issues** tab: check the project, add or fix its entry in `data/recomps.js`, then close the issue.
+
 ## Sources and license
 
 The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.

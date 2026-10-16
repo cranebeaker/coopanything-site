@@ -1,0 +1,67 @@
+name: Submit a game
+description: Suggest a recomp, decomp or native port that's missing from RecompHaven, or a correction to one that's listed.
+title: "[Submission]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping keep RecompHaven complete. Every submission is checked by hand before it goes on the site.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What are you submitting?
+      options:
+        - A missing recompilation
+        - A missing decompilation or native port
+        - A correction to a game that's already listed
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Project link
+      description: The project's GitHub or GitLab page, or its website.
+      placeholder: https://github.com/owner/project
+    validations:
+      required: true
+
+  - type: input
+    id: game
+    attributes:
+      label: Game
+      placeholder: "Viva Piñata: Trouble in Paradise"
+    validations:
+      required: true
+
+  - type: input
+    id: console
+    attributes:
+      label: Original console
+      placeholder: Xbox 360
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: How far along is it?
+      options:
+        - Released (stable, playable start to finish)
+        - Playable beta
+        - In development (boots or partly works)
+        - Early work, not playable yet
+        - Not sure
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Are you involved with the project?
+      options:
+        - Yes, I work on it
+        - No
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Which systems it runs on, features like widescreen, mods or keyboard and mouse, or what's wrong in an existing entry.
