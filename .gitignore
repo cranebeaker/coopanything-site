@@ -15,3 +15,6 @@ desktop.ini
 
 # Local Python environment (Pillow for tools/fetch_covers.py)
 .venv/
+
+# Built site (tools/build_pages.py); GitHub Actions builds its own on deploy
+_site/

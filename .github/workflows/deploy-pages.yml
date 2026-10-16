@@ -37,11 +37,17 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
-      # Only the site itself goes live: not tools/, the README or the workflows.
-      - name: Collect the site files
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Copies the site files into _site (not tools/, the README or the
+      # workflows), then adds a page and a share image per game, sitemap.xml
+      # and robots.txt.
+      - name: Build the site
         run: |
-          mkdir _site
-          cp -r index.html favicon.ico styles.css app.js assets data _site/
+          pip install pillow
+          python tools/build_pages.py
 
       - uses: actions/upload-pages-artifact@v4
         with:

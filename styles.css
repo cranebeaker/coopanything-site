@@ -7,7 +7,9 @@
    NewCezanne Pro B is one bold face, so it serves every display weight as is.
    Rodin Pro is installed only as DB: it's declared as the regular face, so
    regular text uses it as is and bold text (600 and up) gets it thickened by
-   the browser, keeping today's bold/regular contrast. */
+   the browser, keeping today's bold/regular contrast. Its curly quotes are
+   full-width, leaving a gap after every apostrophe, so those come from the
+   next font in the stack (unicode-range skips U+2018 to U+201F). */
 @font-face {
   font-family: "RH Display";
   src: local("NewCezannePro-B"), local("FOT-NewCezanne Pro B");
@@ -17,6 +19,7 @@
   font-family: "RH Text";
   src: local("RodinPro-DB"), local("FOT-Rodin Pro DB");
   font-weight: 100 500;
+  unicode-range: U+0000-2017, U+2020-10FFFF;
 }
 
 :root {
@@ -873,6 +876,122 @@ dialog::backdrop { background: var(--backdrop); }
 .d-note { padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); font-size: 0.9rem; }
 .d-links { display: flex; flex-wrap: wrap; gap: 10px; }
 
+.d-compare {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  color: var(--fg);
+  text-decoration: none;
+}
+.d-compare strong { color: var(--accent); white-space: nowrap; }
+.d-compare:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.d-minor { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-left: auto; align-self: center; }
+.d-minor .d-correct { margin-left: 0; }
+
+/* ── Game pages (games/<slug>/, built by tools/build_pages.py) ── */
+
+.masthead--slim { padding-block: 16px; }
+.masthead--slim .masthead__top { align-items: center; }
+.home-link { --logo-w: clamp(150px, 22vw, 210px); display: block; line-height: 0; }
+.home-link img {
+  display: block;
+  width: var(--logo-w);
+  max-width: none;
+  height: auto;
+  margin-left: calc(var(--logo-w) * var(--logo-inset) / -1615 + 1px);
+}
+
+.gp { display: grid; gap: 24px; padding-block: 20px 40px; }
+.gp:focus { outline: none; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+.crumbs a { color: inherit; }
+.crumbs a:hover { color: var(--accent); }
+
+.gp-hero { display: flex; align-items: flex-end; gap: 28px; }
+.gp-hero .d-cover { width: auto; }
+.gp-hero .d-cover img { max-width: 220px; max-height: 300px; }
+.gp-hero__text { display: grid; gap: 10px; min-width: 0; }
+.gp-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 6vw, 3.8rem);
+  line-height: 1.02;
+  letter-spacing: 0.005em;
+}
+.gp-lede { margin: 0; font-size: 1.05rem; max-width: 62ch; }
+
+.gp-pick {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+.gp-pick > .tier { width: 64px; height: 64px; font-size: 2.4rem; border-radius: 8px; }
+.gp-pick__text { display: grid; gap: 4px; min-width: 0; }
+.gp-label, .gp-badge {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent);
+}
+.gp-pick h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; line-height: 1; overflow-wrap: anywhere; }
+.gp-pick h2 a { color: inherit; text-decoration: none; }
+.gp-pick h2 a:hover { color: var(--accent); }
+.gp-by { font-family: var(--font-body); font-weight: 400; font-size: 0.95rem; color: var(--muted); white-space: nowrap; }
+.gp-pick p { margin: 0; max-width: 80ch; }
+
+.gp-h2 {
+  margin: 8px 0 -8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* One card per project. Subgrid lines the rows up across cards, so each fact
+   sits at the same height in every column. */
+.gp-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 14px;
+}
+.gp-compare--one { grid-template-columns: minmax(0, 760px); }
+.gp-card {
+  display: grid;
+  grid-row: span var(--rows);
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  scroll-margin-top: 16px;
+}
+.gp-card.is-pick { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.gp-cell { min-width: 0; padding: 11px 16px; border-top: 1px solid var(--line); }
+.gp-card__head { display: grid; gap: 3px; align-content: start; padding-top: 16px; border-top: 0; }
+.gp-card__title { margin: 0; font-size: 1.15rem; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
+.gp-card__head .game__sub { margin: 0; }
+.gp-card__head .game__sub:empty { display: none; }
+.gp-verdict { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.gp-verdict .tier { width: 44px; height: 44px; font-size: 1.6rem; border-radius: 7px; }
+.gp-verdict strong { display: block; }
+.gp-verdict div span { display: block; font-size: 0.84rem; line-height: 1.4; color: var(--muted); }
+.gp-fact { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 4px 12px; align-items: baseline; }
+.gp-k { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.gp-v { min-width: 0; }
+.gp-text { display: grid; gap: 4px; align-content: start; }
+.gp-text p { margin: 0; font-size: 0.92rem; }
+.gp-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-bottom: 16px; }
+.gp-links .d-correct { flex-basis: 100%; margin-left: 0; }
+.gp-missing { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
 /* ── Small screens ────────────────────────────────────── */
 
 @media (max-width: 860px) {
@@ -905,6 +1024,14 @@ dialog::backdrop { background: var(--backdrop); }
   .d-head { flex-direction: column; gap: 14px; }
   .d-cover { width: auto; }
   .d-cover img { max-width: min(220px, 70vw); max-height: 240px; }
+  .d-compare { flex-wrap: wrap; }
+  .d-minor { margin-left: 0; flex-basis: 100%; }
+  .gp-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .gp-hero .d-cover img { max-width: min(200px, 60vw); max-height: 240px; }
+  .gp-pick { grid-template-columns: auto minmax(0, 1fr); padding: 16px; }
+  .gp-pick > .tier { width: 52px; height: 52px; font-size: 2rem; align-self: start; }
+  .gp-pick > .btn { grid-column: 1 / -1; justify-self: start; }
+  .gp-fact { grid-template-columns: 100px minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {

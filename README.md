@@ -2,7 +2,7 @@
 
 A tracker for every game recompilation, released and in progress. Sort and filter by console, genre, quality tier, stage, toolchain, features and activity.
 
-It's a static site with no build step: `index.html`, `styles.css`, `app.js` and the data in `data/recomps.js`.
+It's a static site: `index.html`, `styles.css`, `app.js`, and the data in `data/recomps.js` and `data/tables.js`. On deploy, `tools/build_pages.py` adds a page and a link-preview image for every game.
 
 ## Run it locally
 
@@ -14,13 +14,23 @@ python -m http.server 8765
 
 Then visit http://localhost:8765.
 
+The game pages only exist once the site is built. To see them too, build it into `_site/` and serve that instead (needs Pillow: `pip install pillow`):
+
+```bash
+python tools/build_pages.py
+```
+
+```bash
+python -m http.server 8000 -d _site
+```
+
 ## Deploy
 
-There's nothing to build, so any static host works.
+The host runs `python tools/build_pages.py` (with Pillow installed) and publishes the `_site/` folder it writes.
 
 On GitHub Pages, set **Settings → Pages → Source** to **GitHub Actions**. `.github/workflows/deploy-pages.yml` then publishes the site on every push to `main` and after each nightly data refresh. Don't use "Deploy from a branch": the refresh job's commits wouldn't trigger a rebuild. Add your custom domain on the same settings page.
 
-Cloudflare Pages, Netlify and Vercel can connect to the repo instead and deploy on every push, the nightly refresh included.
+Cloudflare Pages, Netlify and Vercel can connect to the repo instead and deploy on every push, the nightly refresh included. Set the build command to `pip install pillow && python tools/build_pages.py` and the output folder to `_site`.
 
 ## Edit the list
 
@@ -38,7 +48,18 @@ Quality tiers:
 
 Stages are `released`, `beta`, `development` and `abandoned`. The site works out activity (Active, Quiet, Stalled) from the `updated` date on its own.
 
-To add a console, genre or feature, update the matching table at the top of `app.js` (`CONSOLES`, `FEATURES`). Genres and toolchains are read from the data.
+To add a console or feature, update the matching table in `data/tables.js` (`consoles`, `features`). The site and the game-page builder both read it. Genres and toolchains are read from the data.
+
+## Game pages and link previews
+
+Every game gets a page at `recomphaven.com/games/<name>/`, linked from its detail panel on the list. When several projects cover the same game, the page lines them up side by side (stage, tier, systems, features, latest release, activity) and marks one as **Recommended**, with a one-line reason.
+
+- **Which projects share a page:** the ones with the same title. A trailing note in brackets doesn't count, unless it's a year: "Daytona USA (Arcade)" and "Daytona USA (XBLA)" share a page, while "Sonic the Hedgehog (2006)" gets its own.
+- **Which one is recommended:** the best tier, then the furthest stage, then the most GitHub stars. When none of them is B tier or better, it's labelled "Best bet so far" instead. To choose by hand, add `"pick": true` to an entry; to write the reason yourself, add `"pickNote": "..."`.
+- **Link previews:** each page has a 1200×630 image (box art, tier and the recommended project) that Discord, Reddit and other sites show when someone shares the link. The front page has one too. They're drawn with the fonts in `tools/fonts/` (SIL Open Font License).
+- **Search engines:** the build also writes `sitemap.xml` and `robots.txt`.
+
+None of this is committed: it's rebuilt on every deploy, so it follows the data. `_site/` is in `.gitignore`.
 
 ## Keeping the data fresh
 

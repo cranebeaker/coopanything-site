@@ -5,10 +5,10 @@
  *   id           unique slug
  *   title        the game's name
  *   project      the recomp project's own name
- *   console      original platform key (see CONSOLES in app.js)
+ *   console      original platform key (see consoles in data/tables.js)
  *   year         original game's release year
  *   developer    original game's developer
- *   genre        primary genre (see GENRES in app.js)
+ *   genre        primary genre
  *   stage        released | beta | development | abandoned
  *   quality      S | A | B | C | D  (RecompHaven rating, see the legend on the site)
  *   toolchain    recompiler used (N64Recomp, XenonRecomp, ReXGlue, PSXRecomp, ...)
@@ -22,6 +22,9 @@
  *                | keyboard-mouse | keyboard | mod-manager  (see tools/detect_features.py)
  *   ai           true when the project discloses substantial AI-generated code
  *   summary, requires
+ *   pick         optional: true makes this the recommended project on its game page,
+ *                over the automatic choice (see tools/build_pages.py)
+ *   pickNote     optional: replaces the generated reason on the game page
  *
  * Base data (names, statuses, repos, descriptions, GitHub stats) comes from
  * Recompendium (https://github.com/nio03/unricopie), MIT License,
