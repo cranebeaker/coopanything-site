@@ -158,6 +158,8 @@ The script reads each project's README and its three newest release notes, skipp
 
 The site's "Submit a game" button, the footer link and each game's "Suggest a correction" link open the GitHub issue form in `.github/ISSUE_TEMPLATE/submit-a-game.yml`. Corrections arrive with the game's name and link filled in. Each submission shows up under the repo's **Issues** tab: check the project, add or fix its entry in `data/recomps.js`, then close the issue.
 
+The **Thanks** section near the bottom of the site credits everyone whose submission was added or whose feedback changed the site. Add people to `data/credits.js`, with their GitHub or Reddit username and a few words on what they did.
+
 ## Sources and license
 
 The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.

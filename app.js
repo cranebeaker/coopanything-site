@@ -410,6 +410,22 @@
         : 'Trending shows up once the nightly update has counted this week’s stars.'}</li>`;
   }
 
+  // ── Thanks (data/credits.js) ─────────────────────────────
+
+  const PROFILES = {
+    github: (n) => [`https://github.com/${encodeURIComponent(n)}`, `@${n}`],
+    reddit: (n) => [`https://www.reddit.com/user/${encodeURIComponent(n)}/`, `u/${n}`],
+  };
+
+  function renderThanks() {
+    const people = (window.RECOMPHAVEN_CREDITS || []).filter((p) => PROFILES[p.site]);
+    $('.thanks').hidden = !people.length;
+    $('#thanks-list').innerHTML = people.map((p) => {
+      const [url, handle] = PROFILES[p.site](p.name);
+      return `<li><a href="${esc(url)}" target="_blank" rel="noopener">${esc(handle)}</a>${p.for ? `<span>${esc(p.for)}</span>` : ''}</li>`;
+    }).join('');
+  }
+
   // ── Detail dialog ────────────────────────────────────────
 
   const dialog = $('#detail');
@@ -657,6 +673,7 @@
   readURL();
   buildControls();
   renderPulse();
+  renderThanks();
   $('#q').value = state.q;
   render();
 

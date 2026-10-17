@@ -786,6 +786,40 @@ button, input, select { font: inherit; color: inherit; }
 
 .stage-list .act { font-size: 0.84rem; font-weight: 600; }
 
+/* ── Thanks (data/credits.js) ─────────────────────────── */
+
+.thanks { padding-block: 0 40px; }
+.thanks__inner { padding-top: 32px; border-top: 1px solid var(--line); }
+.thanks h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.thanks__intro { margin: 0 0 16px; max-width: 70ch; color: var(--muted); }
+.thanks__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.thanks__list li {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.thanks__list a { font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.thanks__list a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.thanks__list span { font-size: 0.85rem; color: var(--muted); }
+
 .footer {
   padding-block: 20px 36px;
   border-top: 1px solid var(--line);
