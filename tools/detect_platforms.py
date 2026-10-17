@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Work out which PC operating systems each recomp runs on, from GitHub.
+"""Work out which systems each recomp runs on (Windows, Linux, macOS, Android), from GitHub.
 
 For every entry with a github.com repo this sets:
 
-    "platforms"      a list of "windows", "linux", "macos" (null when unknown)
+    "platforms"      a list of "windows", "linux", "macos", "android" (null when unknown)
     "platformsFrom"  "release"  the newest release has downloads for them
                      "readme"   the README says it runs or builds there
                      "manual"   set by hand: never touched by this script
@@ -12,7 +12,7 @@ For every entry with a github.com repo this sets:
 Release downloads are read from GitHub's release pages (not the API, so no
 token or rate limit). An entry whose newest release has no OS-specific files,
 or that has no releases, falls back to what its README says, skipping
-mentions like "Linux is planned" or "macOS isn't supported".
+mentions like "Linux is planned" or "Android: coming soon".
 
 By default only entries without platforms, and release-based entries whose
 newest release changed, are checked. Standard library only.
@@ -34,22 +34,24 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from refresh_stats import DATA, dump, load  # noqa: E402
 from fetch_covers import http  # noqa: E402
 
-OSES = ('windows', 'linux', 'macos')
+OSES = ('windows', 'linux', 'macos', 'android')
 REPO_RE = re.compile(r'^https://github\.com/([^/]+/[^/#?]+)')
-IGNORE_ASSET = re.compile(r'\.(sha\d+|sig|asc|txt|md|json|yml|yaml|pdb|sym|apk|ipa|nro|nsp|vpk|pkg)$|source code', re.I)
+IGNORE_ASSET = re.compile(r'\.(sha\d+|sig|asc|txt|md|json|yml|yaml|pdb|sym|ipa|nro|nsp|vpk|pkg)$|source code', re.I)
 
 WIN_TOKENS = {'windows', 'win', 'win64', 'win32', 'win10', 'win11', 'msvc', 'mingw', 'uwp'}
 LINUX_TOKENS = {'linux', 'lin64', 'lin32', 'appimage', 'ubuntu', 'debian', 'fedora', 'steamdeck', 'steamos', 'flatpak'}
 MAC_TOKENS = {'macos', 'mac', 'osx', 'darwin', 'macosx', 'applesilicon'}
+ANDROID_TOKENS = {'android', 'apk'}
 
 README_OS = {
     'windows': re.compile(r'\bwindows\b|\bwin(?:64|32)\b|\.exe\b', re.I),
     'linux': re.compile(r'\blinux\b|steam ?deck|steamos|appimage', re.I),
     'macos': re.compile(r'\bmac ?os\b|\bmacos\b|apple silicon|\bmac\b(?!\s*address)|\bos ?x\b', re.I),
+    'android': re.compile(r'\bandroid\b|\.apk\b', re.I),
 }
 NEGATION = re.compile(
     r"not (?:yet )?(?:supported|available|built|tested|working|a target)|unsupported|untested|planned|"
-    r"coming soon|\bsoon\b|\btodo\b|in the future|eventually|isn['’]t supported|aren['’]t supported|"
+    r"coming soon|\bsoon\b|\btodo\b|in the future|eventually|isn['’]t supported|aren['’]t supported|no plans|"
     r"no (?:ready-made|prebuilt|pre-built|native) (?:build|download)|not published|won['’]t", re.I)
 
 
@@ -63,6 +65,8 @@ def asset_os(name):
         found.add('linux')
     if n.endswith('.dmg') or tokens & MAC_TOKENS:
         found.add('macos')
+    if n.endswith(('.apk', '.aab')) or tokens & ANDROID_TOKENS:
+        found.add('android')
     return found
 
 

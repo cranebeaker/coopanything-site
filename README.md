@@ -147,13 +147,13 @@ To use your own image, save it under `assets/covers/`, point `cover` at it and s
 
 ## Operating systems
 
-Each entry's `platforms` lists the PC operating systems it runs on (`"windows"`, `"linux"`, `"macos"`), and the site's "Runs on" filter and icons read from it. `null` means the project doesn't say.
+Each entry's `platforms` lists the systems it runs on (`"windows"`, `"linux"`, `"macos"`, `"android"`), and the site's "Runs on" filter and icons read from it. `null` means the project doesn't say. Android counts phones and tablets: an Android build only for the Quest VR headset doesn't. The labels and logos are in `data/tables.js`.
 
 ```bash
 python tools/detect_platforms.py
 ```
 
-The script reads the file names on each project's newest GitHub release (for example `-linux-x86_64.AppImage` or `-windows-x64.zip`) and records `"platformsFrom": "release"`. Projects without such downloads fall back to what their README says (`"readme"`), skipping mentions like "Linux is planned". It needs no token or extra packages. By default it only checks entries without platforms and release-based entries whose newest release changed; add `--all` to recheck everything. The nightly workflow runs it too.
+The script reads the file names on each project's newest GitHub release (for example `-linux-x86_64.AppImage`, `-windows-x64.zip` or `-android-arm64.apk`) and records `"platformsFrom": "release"`. Projects without such downloads fall back to what their README says (`"readme"`), skipping mentions like "Linux is planned" or "no plans for Android". It needs no token or extra packages. By default it only checks entries without platforms and release-based entries whose newest release changed; add `--all` to recheck everything. The nightly workflow runs it too.
 
 If it gets one wrong, set `platforms` yourself and `"platformsFrom": "manual"`; the script never changes those.
 

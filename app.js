@@ -24,7 +24,7 @@
     multiplayer: { label: 'Multiplayer', tags: ['multiplayer'] },
     kbm: { label: 'Keyboard/mouse', tags: ['keyboard-mouse', 'keyboard'], title: 'Playable with a keyboard, with or without the mouse' },
   };
-  // PC operating systems a recomp runs on (the "platforms" field). Logos from
+  // Systems a recomp runs on: Windows, Linux, macOS, Android (the "platforms" field). Logos from
   // Simple Icons (CC0); the 24x24 paths are filled with currentColor.
   const OS = TABLES.os;
   const OS_ORDER = Object.keys(OS);
@@ -373,7 +373,7 @@
 
     const osCount = (k) => DATA.filter((e) => (e.platforms || []).includes(k)).length;
     $('#os-filter').innerHTML = `<button type="button" data-os="" aria-pressed="true">All</button>` +
-      OS_ORDER.map((k) => `<button type="button" data-os="${k}" aria-pressed="false" title="${osCount(k)} recomps run on ${OS[k].label}">${osIcon(k)}<span>${OS[k].label}</span></button>`).join('');
+      OS_ORDER.map((k) => `<button type="button" data-os="${k}" aria-pressed="false" aria-label="${OS[k].label}" title="${osCount(k)} recomps run on ${OS[k].label}">${osIcon(k)}<span>${OS[k].label}</span></button>`).join('');
 
     $('#feature-chips').innerHTML = '<span class="chips__label">Must have</span>' + Object.entries(FEATURE_FILTERS).map(([f, c]) =>
       `<button type="button" class="chip" data-feature="${f}" aria-pressed="false"${c.title ? ` title="${c.title}"` : ''}>${c.label}</button>`).join('');
