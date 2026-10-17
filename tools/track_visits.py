@@ -95,6 +95,9 @@ def main():
         missing = ' and '.join(x for x, ok in (('GOATCOUNTER in tools/build_pages.py', GOATCOUNTER),
                                                 ('GOATCOUNTER_TOKEN', token)) if not ok)
         print(f'Visit counting is off: set {missing}. Trending uses GitHub stars meanwhile.')
+        if args.summary:
+            with open(args.summary, 'a', encoding='utf-8') as f:
+                f.write(f'## Visits this week\n\nOff: set {missing}. Trending uses GitHub stars meanwhile.\n')
         return
 
     text, head, meta, entries = load(args.data)

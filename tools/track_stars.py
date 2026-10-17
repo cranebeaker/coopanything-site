@@ -127,10 +127,11 @@ def main():
                     print(f'  {entry["id"]}: not found (404)')
                     continue
             except FetchError as err:
-                if 'HTTP 401' in str(err):
+                # 401 without a token; 403 when the token can't list another owner's stargazers
+                # (the workflow's GITHUB_TOKEN). Rate limits are waited out before this point.
+                if 'HTTP 401' in str(err) or 'HTTP 403' in str(err):
                     use_api = False
-                    print('  GitHub wants a signed-in request to list stars by date; '
-                          'using data/stars-history.json instead.')
+                    print(f'  GitHub won\'t list stars by date ({err}); using data/stars-history.json instead.')
                 else:
                     errors += 1
                     print(f'  {entry["id"]}: {err}')
