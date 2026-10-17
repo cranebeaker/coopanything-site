@@ -195,6 +195,9 @@ button, input, select { font: inherit; color: inherit; }
   white-space: nowrap;
 }
 .submit-btn:hover { filter: brightness(1.1); }
+/* Send feedback: the same pill, outlined, so Submit a game stays the main action. */
+.feedback-btn { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.feedback-btn:hover { filter: none; background: var(--accent-soft); }
 
 .d-correct { margin-left: auto; align-self: center; font-size: 0.85rem; color: var(--muted); }
 .d-correct:hover { color: var(--accent); }
@@ -554,16 +557,20 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* Narrower windows drop the columns the detail panel also shows, so Stars always fits. */
-@media (max-width: 1320px) { .grid .col-tool { display: none; } }
-@media (max-width: 1190px) { .grid .col-release { display: none; } }
-@media (max-width: 1060px) { .grid .col-genre { display: none; } }
-@media (max-width: 920px) { .grid .col-activity { display: none; } }
+/* Columns drop out as the window narrows, so the table never scrolls sideways. */
+@media (max-width: 1312px) { .grid .col-release { display: none; } }
+@media (max-width: 1175px) { .grid .col-genre { display: none; } }
+@media (max-width: 1040px) { .grid .col-activity { display: none; } }
+@media (max-width: 905px) { .grid .col-os { display: none; } }
+@media (max-width: 820px) { .grid .col-score { display: none; } }
 @media (max-width: 860px) { .table-wrap .grid td:first-child { min-width: 200px; } }
-@media (max-width: 800px) { .table-wrap .grid td:first-child { min-width: 170px; } .grid .col-os { display: none; } }
+@media (max-width: 800px) { .table-wrap .grid td:first-child { min-width: 170px; } }
 .grid tbody tr:last-child td { border-bottom: 0; }
 .grid tbody tr { cursor: pointer; }
 .grid tbody tr:hover td { background: color-mix(in srgb, var(--surface-2) 70%, var(--surface)); }
 .grid td.num { text-align: right; }
+.grid td.col-score { white-space: nowrap; }
+.grid .score { font-size: 0.95rem; font-weight: 600; }
 
 .game { display: grid; gap: 2px; min-width: 0; max-width: 400px; }
 .game-cell { display: flex; align-items: center; gap: 12px; }
@@ -1135,8 +1142,41 @@ dialog::backdrop { background: var(--backdrop); }
 .gp-text { display: grid; gap: 4px; align-content: start; }
 .gp-text p { margin: 0; font-size: 0.92rem; }
 .gp-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-bottom: 16px; }
-.gp-links .d-correct { flex-basis: 100%; margin-left: 0; }
+.btn svg { flex: none; }
 .gp-missing { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+/* Ratings and comments (giscus) */
+.gp-comments { display: grid; gap: 14px; scroll-margin-top: 16px; }
+.gp-comments .gp-h2 { margin: 8px 0 0; }
+.gp-comments__intro { margin: 0; max-width: 75ch; color: var(--muted); }
+.gp-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp-tabs button {
+  height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.86rem; font-weight: 600;
+  cursor: pointer;
+}
+.gp-tabs button:hover { border-color: var(--accent); }
+.gp-tabs button[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.gp-rate {
+  display: grid; gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface);
+}
+.gp-rate__buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.gp-rate__buttons button {
+  width: 40px; height: 40px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg);
+  font-family: var(--font-display); font-weight: 800; font-size: 1.15rem;
+  cursor: pointer;
+}
+.gp-rate__buttons button:hover { border-color: var(--accent); color: var(--accent); }
+.gp-rate__buttons button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.gp-rate__status { margin: 0; min-height: 1.2em; }
+.gp-rate__status:empty { display: none; }
 
 /* ── Small screens ────────────────────────────────────── */
 
@@ -1162,9 +1202,11 @@ dialog::backdrop { background: var(--backdrop); }
   .sort-pair { flex: 1; }
   .sort-pair select { flex: 1; min-width: 0; }
   .d-body { padding: 18px 16px 20px; }
-  /* Logo, gap and the two round buttons fit a 375px phone. */
-  .wordmark { --logo-w: min(240px, 100vw - 140px); }
-  .submit-btn { width: 42px; padding: 0; justify-content: center; }
+  /* Logo, gap and the three round buttons fit a 375px phone. */
+  .wordmark { --logo-w: min(240px, 100vw - 182px); }
+  .masthead__actions { gap: 8px; }
+  .masthead__actions .icon-btn { width: 40px; height: 40px; }
+  .submit-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
   .submit-btn span { display: none; }
   .d-correct { margin-left: 0; flex-basis: 100%; }
   .cover--lg { width: 88px; height: 88px; }

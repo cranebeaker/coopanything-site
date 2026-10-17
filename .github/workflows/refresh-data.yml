@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  discussions: read   # for the user scores (tools/track_ratings.py)
 
 concurrency:
   group: refresh-data
@@ -59,6 +60,12 @@ jobs:
         env:
           GOATCOUNTER_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}
         run: python tools/track_visits.py --summary "$GITHUB_STEP_SUMMARY"
+
+      # Does nothing until comments are set up (README: "Ratings and comments").
+      - name: Average the user scores
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/track_ratings.py --summary "$GITHUB_STEP_SUMMARY"
 
       # Does nothing until the repo has a DISCORD_WEBHOOK_URL secret (see the script).
       - name: Post new releases to Discord

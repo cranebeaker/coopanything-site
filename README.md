@@ -82,6 +82,22 @@ It's off until you set it up:
 
 Trending switches to visitors after the first nightly refresh that finds any. GoatCounter's dashboard also shows page views, referrers and the like. Visits from `localhost` aren't counted, so testing locally doesn't skew the numbers.
 
+### Ratings and comments
+
+Each game page ends with **Ratings and comments**: one thread per project, where visitors signed in with GitHub can comment, reply and react. It runs on [giscus](https://giscus.app), which keeps every thread as a GitHub Discussion in this repo, so there's no server to run and you can moderate on GitHub.
+
+To rate a project, people start a comment with a score out of 10, like `Score: 8/10`; the 1 to 10 buttons above the comments copy that text for them. Each night `tools/track_ratings.py` averages each GitHub account's latest score per project into `userScore` and `userScoreCount`, which fill the **User score** column, its sort, the detail panel and the game pages. Replies and comments without a score don't count. To remove a score, hide the comment on GitHub.
+
+It's off until you set it up:
+
+1. On GitHub, open the repo's **Settings → General → Features** and tick **Discussions**.
+2. Open the new **Discussions** tab, click the pencil next to **Categories**, then **New category**. Name it exactly `Ratings and comments` and choose the **Announcement** format, so only giscus and you can start threads and everyone else replies in them.
+3. Install the giscus app at [github.com/apps/giscus](https://github.com/apps/giscus), for this repository only.
+4. Go to [giscus.app](https://giscus.app), type `rikuwru/recomphaven` under Repository, pick the `Ratings and comments` category, and copy the `data-category-id` value from the script it shows.
+5. Put that value in `category_id` in `GISCUS` near the top of `tools/build_pages.py`, then commit and push.
+
+The next deploy adds the comments to every game page, and the next nightly refresh starts filling in user scores.
+
 ### Posting new releases to Discord
 
 The nightly refresh can post each new release to a Discord channel, with its box art, tier and a link to the game's page. It stays off until you add a webhook:
@@ -156,7 +172,9 @@ The script reads each project's README and its three newest release notes, skipp
 
 ## Submissions
 
-The site's "Submit a game" button, the footer link and each game's "Suggest a correction" link open the GitHub issue form in `.github/ISSUE_TEMPLATE/submit-a-game.yml`. Corrections arrive with the game's name and link filled in. Each submission shows up under the repo's **Issues** tab: check the project, add or fix its entry in `data/recomps.js`, then close the issue.
+The site's "Submit a game" button and the footer link open the GitHub issue form in `.github/ISSUE_TEMPLATE/submit-a-game.yml`. Each submission shows up under the repo's **Issues** tab: check the project, add or fix its entry in `data/recomps.js`, then close the issue.
+
+The **Send feedback** button, the footer link and each game's "Suggest a correction" link open a second form, `.github/ISSUE_TEMPLATE/feedback.yml`, for feedback on a game's summary, tier or details, or on the site itself. Corrections arrive with the game and project filled in, and the form asks how the person would like to be credited.
 
 The **Thanks** section near the bottom of the site credits everyone whose submission was added or whose feedback changed the site. Add people to `data/credits.js`, with their GitHub or Reddit username and a few words on what they did.
 

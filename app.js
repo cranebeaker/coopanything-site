@@ -42,6 +42,7 @@
     release: { label: 'Latest release', dir: 'desc', get: (e) => e.versionDate, dirs: ['Oldest first', 'Newest first'] },
     started: { label: 'Project start', dir: 'desc', get: (e) => e.started, dirs: ['Oldest first', 'Newest first'] },
     stars: { label: 'GitHub stars', dir: 'desc', get: (e) => e.stars, dirs: ['Fewest first', 'Most first'] },
+    score: { label: 'User score', dir: 'desc', get: (e) => e.userScore, dirs: ['Lowest first', 'Highest first'] },
     trending: { label: 'Trending this week', dir: 'desc', get: (e) => trendOf(e), dirs: ['Fewest first', 'Most first'] },
     title: { label: 'Name', dir: 'asc', get: (e) => e.title, dirs: ['A to Z', 'Z to A'] },
     year: { label: 'Original release', dir: 'asc', get: (e) => e.year, dirs: ['Oldest first', 'Newest first'] },
@@ -51,12 +52,22 @@
     toolchain: { label: 'Toolchain', dir: 'asc', get: (e) => e.toolchain, dirs: ['A to Z', 'Z to A'] },
   };
 
-  // GitHub issue form for new games and corrections (.github/ISSUE_TEMPLATE/submit-a-game.yml).
-  const SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml';
-  const correctionUrl = (e) => `${SUBMIT_URL}&${new URLSearchParams({
-    title: `[Correction]: ${e.title}`,
+  // The feedback issue form (.github/ISSUE_TEMPLATE/feedback.yml). "Suggest a correction"
+  // opens it with the game and project filled in.
+  const FEEDBACK_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml';
+  const PENCIL = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Zm10-14 4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+
+  // User scores: the average of everyone's latest "N/10" in a project's comments on its game page
+  // (tools/track_ratings.py, nightly). Comments exist once giscus is set up; the build marks that
+  // with <meta name="rh-comments">.
+  const COMMENTS_ON = !!document.querySelector('meta[name="rh-comments"]');
+  const scoreText = (e) => e.userScore.toFixed(1);
+  const ratingsText = (e) => `${e.userScoreCount} ${e.userScoreCount === 1 ? 'rating' : 'ratings'}`;
+
+  const correctionUrl = (e) => `${FEEDBACK_URL}&${new URLSearchParams({
+    title: `[Feedback]: ${e.title}`,
     game: e.title,
-    url: e.repo || e.website || '',
+    details: `About ${e.project || e.title}${e.repo || e.website ? ` (${e.repo || e.website})` : ''}:\n\n`,
   })}`;
 
   // Each game has a page at games/<slug>/, built by tools/build_pages.py, whose slug_of()
@@ -259,11 +270,13 @@
         <td class="col-genre"><div class="stack"><span>${esc(e.genre)}</span><span class="small muted">${e.year || ''}</span></div></td>
         <td>${stagePill(e)}</td>
         <td>${tierTile(e)}</td>
-        <td class="col-tool"><span class="mono trunc" title="${esc(e.toolchain)}">${esc(e.toolchain)}</span></td>
         <td class="col-release">${e.version || e.versionDate
           ? `<div class="stack"><span class="mono trunc" title="${esc(e.version || 'Release')}">${esc(e.version || 'Release')}</span><span class="small muted">${esc(fmtDate(e.versionDate))}</span></div>`
           : '<span class="muted">No release</span>'}</td>
         <td class="small col-activity">${actTag(e)}</td>
+        <td class="num col-score">${e.userScore != null
+          ? `<div class="stack"><span class="mono score">${scoreText(e)}</span><span class="small muted">${ratingsText(e)}</span></div>`
+          : '<span class="muted">—</span>'}</td>
         <td class="num"><div class="stack"><span class="mono">${fmtStars(e.stars)}</span>${gainTag(e)}</div></td>
       </tr>`).join('');
 
@@ -287,7 +300,7 @@
         ${(e.features || []).length ? `<div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div>` : ''}
         <div class="card__foot">
           ${stagePill(e)}
-          <span class="muted">${actTag(e)}<span class="mono" title="GitHub stars">★ ${fmtStars(e.stars)} ${gainTag(e)}</span></span>
+          <span class="muted">${actTag(e)}${e.userScore != null ? `<span class="mono" title="User score, from ${ratingsText(e)}">${scoreText(e)}/10</span>` : ''}<span class="mono" title="GitHub stars">★ ${fmtStars(e.stars)} ${gainTag(e)}</span></span>
         </div>
       </article>`).join('');
   }
@@ -464,6 +477,9 @@
           : '<span class="muted">Not stated by the project</span>'}</dd></div>
         ${fact('Latest release', e.version || e.versionDate ? `<span class="mono">${esc(e.version || 'Release')}</span>${e.versionDate ? `<br><span class="small muted">${esc(fmtDate(e.versionDate))}</span>` : ''}` : '<span class="muted">No release yet</span>')}
         ${fact('Last activity', `${actTag(e)}${e.updated ? `<br><span class="small muted">${esc(fmtDate(e.updated))}</span>` : ''}`)}
+        ${fact('User score', e.userScore != null
+          ? `<span class="mono">${scoreText(e)}</span> <span class="small muted">/ 10</span><br><span class="small muted">${ratingsText(e)}</span>`
+          : COMMENTS_ON ? `<a href="games/${slug}/#comments">Be the first to rate it</a>` : '')}
         ${fact('Project started', e.started ? esc(fmtDate(e.started)) : '')}
         ${fact('GitHub stars', e.stars != null ? `<span class="mono">${e.stars.toLocaleString('en')}</span>${
           e.starsWeek > 0 ? `<br><span class="small gain">+${e.starsWeek.toLocaleString('en')} this week</span>` : ''}` : '')}
@@ -477,9 +493,10 @@
       <div class="d-links">
         ${e.repo ? `<a class="btn" href="${esc(e.repo)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Open repository ↗</a>` : ''}
         ${e.website ? `<a class="btn btn--ghost" href="${esc(e.website)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Project website ↗</a>` : ''}
+        <a class="btn btn--ghost" href="${esc(correctionUrl(e))}" target="_blank" rel="noopener" title="Something wrong or out of date? Opens the feedback form on GitHub with this game filled in">${PENCIL}Suggest a correction</a>
         <span class="d-minor">
+          ${COMMENTS_ON ? `<a class="d-correct" href="games/${slug}/#comments">Rate and comment</a>` : ''}
           ${siblings > 1 ? '' : `<a class="d-correct" href="games/${slug}/">Game page</a>`}
-          <a class="d-correct" href="${esc(correctionUrl(e))}" target="_blank" rel="noopener">Suggest a correction ↗</a>
         </span>
       </div>`;
 

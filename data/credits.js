@@ -15,5 +15,6 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "KakosGotStyle", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
   {"name": "SolarCookies", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
   {"name": "Obvious-Donut-3923", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
-  {"name": "web10177", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"}
+  {"name": "web10177", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
+  {"name": "eurojosh", "site": "reddit", "for": "Suggested two Need for Speed: Most Wanted recomps, Forza Horizon 1 and 2, and Forza Motorsport 3, 4 and 5"}
 ];

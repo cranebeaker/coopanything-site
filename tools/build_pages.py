@@ -47,10 +47,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from refresh_stats import DATA, ROOT, load  # noqa: E402
 
 SITE = 'https://recomphaven.com'
+# giscus (https://giscus.app): ratings and comments on game pages, kept as GitHub Discussions in
+# this repo, one thread per project. Off until category_id is filled in (README: "Ratings and
+# comments"); tools/track_ratings.py averages the scores people post there.
+GISCUS = {'repo': 'rikuwru/recomphaven', 'repo_id': 'R_kgDOVMUa9g',
+          'category': 'Ratings and comments', 'category_id': 'DIC_kwDOVMUa9s4DIxXc'}
+COMMENTS_ON = bool(GISCUS['repo_id'] and GISCUS['category_id'])
 # GoatCounter site code (the "recomphaven" in recomphaven.goatcounter.com), or '' for no
 # visit counting. It counts the visits that rank Trending; see tools/track_visits.py.
 GOATCOUNTER = 'recomphaven'
 SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml'
+FEEDBACK_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml'
 STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
@@ -229,6 +236,10 @@ def cover_html(e, alt):
 
 # ── Game page ────────────────────────────────────────────
 
+PENCIL = ('<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Zm10-14 4 4" '
+          'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>')
+
+
 def card(e, game, rows):
     multi = len(game['entries']) > 1
     t = TIERS[e['quality']]
@@ -278,6 +289,14 @@ def card(e, game, rows):
             a = activity(e)
             when = small(esc(fmt_date(e['updated']))) if e.get('updated') else ''
             cells.append(fact('Last activity', f'<span class="act act--{a}">{a.capitalize()}</span>{when}'))
+        elif row == 'score':
+            if e.get('userScore') is not None:
+                n = e.get('userScoreCount') or 0
+                cells.append(fact('User score', f'<span class="mono">{e["userScore"]:.1f}</span> / 10'
+                                  + small(f'{n} {"rating" if n == 1 else "ratings"}')))
+            else:
+                cells.append(fact('User score', f'<a href="#comments" data-rate="{esc(e["id"])}">Be the first to rate it</a>'
+                                  if COMMENTS_ON else muted('No ratings yet')))
         elif row == 'stars':
             stars = e.get('stars')
             gain = small(f'+{e["starsWeek"]:,} this week') if e.get('starsWeek') else ''
@@ -291,14 +310,18 @@ def card(e, game, rows):
             cells.append(text('What you need', f'<p>{esc(e["requires"])}</p>' if e.get('requires')
                               else '<p class="muted">Not stated</p>'))
 
-    correction = SUBMIT_URL + '&' + urlencode({
-        'title': f'[Correction]: {e["title"]}', 'game': e['title'], 'url': e.get('repo') or e.get('website') or ''})
+    link = e.get('repo') or e.get('website')
+    correction = FEEDBACK_URL + '&' + urlencode({
+        'title': f'[Feedback]: {e["title"]}', 'game': e['title'],
+        'details': f'About {e["project"]}{f" ({link})" if link else ""}:\n\n'})
     links = []
     if e.get('repo'):
         links.append(f'<a class="btn" href="{esc(e["repo"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Repository ↗</a>')
     if e.get('website'):
         links.append(f'<a class="btn btn--ghost" href="{esc(e["website"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Website ↗</a>')
-    links.append(f'<a class="d-correct" href="{esc(correction)}" target="_blank" rel="noopener">Suggest a correction ↗</a>')
+    links.append(f'<a class="btn btn--ghost" href="{esc(correction)}" target="_blank" rel="noopener" '
+                 f'title="Something wrong or out of date? Opens the feedback form on GitHub with this game filled in">'
+                 f'{PENCIL}Suggest a correction</a>')
     cells.append(f'<div class="gp-cell gp-links">{"".join(links)}</div>')
 
     cls = 'gp-card is-pick' if badge else 'gp-card'
@@ -312,7 +335,7 @@ def page(game, share_url, snapshot):
     consoles = [console_of(k) for k in game['consoles']]
 
     rows = ['console'] if len(game['consoles']) > 1 else []
-    rows += ['stage', 'os', 'features', 'release', 'activity', 'stars', 'toolchain']
+    rows += ['stage', 'os', 'features', 'release', 'activity', 'score', 'stars', 'toolchain']
     rows += [r for r in ('summary', 'requires') if any(e.get(r) for e in es)]
 
     if multi:
@@ -375,10 +398,50 @@ def page(game, share_url, snapshot):
       {cards}
   </div>
 
+{comments_html(game)}
   <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
     return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
                     image_alt=f'{name} on RecompHaven: {pick["project"]}, {pick["quality"]} tier',
                     body=body, snapshot=snapshot, visit=None if multi else pick['id'])
+
+
+def comments_html(game):
+    """Ratings and comments: a giscus thread per project (term = the project's id), a switcher
+    when the game has several projects, and a 1 to 10 picker that copies "Score: N/10" for the
+    comment box. game.js drives the switcher, the picker and the theme."""
+    if not COMMENTS_ON:
+        return ''
+    es, pick = game['entries'], game['pick']
+    tabs = ''
+    if len(es) > 1:
+        names = [e['project'] for e in es]
+
+        def label(e):  # two projects with the same name get their team added
+            team = e.get('team')
+            return f'{e["project"]} ({team})' if names.count(e['project']) > 1 and team else e['project']
+        tabs = ('\n    <div class="gp-tabs" role="tablist" aria-label="Which project">'
+                + ''.join(f'<button type="button" role="tab" aria-selected="{"true" if e is pick else "false"}" '
+                          f'data-term="{esc(e["id"])}">{esc(label(e))}</button>' for e in es)
+                + '</div>')
+    scores = ''.join(f'<button type="button" data-score="{n}">{n}</button>' for n in range(1, 11))
+    g = GISCUS
+    return f'''
+  <section class="gp-comments" id="comments" aria-labelledby="comments-title">
+    <h2 class="gp-h2" id="comments-title">Ratings and comments</h2>
+    <p class="gp-comments__intro">Sign in with GitHub to comment or reply. To rate {'a project' if len(es) > 1 else 'it'}, start your comment with a score out of 10: pick one below to copy it, then paste it into the comment box. Each person's latest score counts towards the User score, which updates once a day.</p>{tabs}
+    <div class="gp-rate">
+      <span class="gp-k" id="rate-label">Your score</span>
+      <div class="gp-rate__buttons" role="group" aria-labelledby="rate-label">{scores}</div>
+      <p class="gp-rate__status small muted" aria-live="polite"></p>
+    </div>
+    <div class="giscus"></div>
+    <script src="https://giscus.app/client.js" data-repo="{g['repo']}" data-repo-id="{g['repo_id']}"
+      data-category="{esc(g['category'])}" data-category-id="{g['category_id']}" data-mapping="specific"
+      data-term="{esc(pick['id'])}" data-strict="1" data-reactions-enabled="1" data-emit-metadata="0"
+      data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy"
+      crossorigin="anonymous" async></script>
+  </section>
+'''
 
 
 def analytics_tag():
@@ -437,7 +500,11 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
   <div class="wrap masthead__top">
     <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="Re:Haven, back to every recomp" width="1615" height="338"></a>
     <div class="masthead__actions">
-      <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" title="Suggest a missing recomp, decomp or port, or a correction (opens a form on GitHub)">
+      <a class="submit-btn feedback-btn" href="{FEEDBACK_URL}" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Send feedback</span>
+      </a>
+      <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" aria-label="Submit a game" title="Suggest a missing recomp, decomp or port (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         <span>Submit a game</span>
       </a>
@@ -455,7 +522,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 
 <footer class="wrap footer">
   <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a>.</p>
+  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a>.</p>
 {analytics_note()}</footer>
 
 <script src="{root}game.js"></script>
@@ -809,7 +876,8 @@ def main():
         index = f.read()
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url)
-                .replace('</head>', analytics_tag() + '</head>', 1)
+                .replace('</head>', analytics_tag()
+                         + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + '</head>', 1)
                 .replace('</footer>', analytics_note() + '</footer>', 1))
 
     os.makedirs(os.path.join(out, 'releases'))

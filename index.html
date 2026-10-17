@@ -39,7 +39,11 @@
       <p class="asm" aria-hidden="true">MIPS · PowerPC · 65816 · SH-4 · x86 <span>→</span> native C</p>
     </div>
     <div class="masthead__actions">
-      <a class="submit-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener" title="Suggest a missing recomp, decomp or port, or a correction (opens a form on GitHub)">
+      <a class="submit-btn feedback-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Send feedback</span>
+      </a>
+      <a class="submit-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener" aria-label="Submit a game" title="Suggest a missing recomp, decomp or port (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         <span>Submit a game</span>
       </a>
@@ -134,9 +138,9 @@
             <th scope="col" data-sort="genre" class="col-genre"><button type="button">Genre</button></th>
             <th scope="col" data-sort="stage"><button type="button">Stage</button></th>
             <th scope="col" data-sort="quality"><button type="button">Quality</button></th>
-            <th scope="col" data-sort="toolchain" class="col-tool"><button type="button">Toolchain</button></th>
             <th scope="col" data-sort="release" class="col-release"><button type="button">Latest release</button></th>
             <th scope="col" data-sort="updated" class="col-activity"><button type="button">Last activity</button></th>
+            <th scope="col" data-sort="score" class="num col-score"><button type="button" title="Average of visitors' ratings out of 10, from the comments on each game's page">User score</button></th>
             <th scope="col" data-sort="stars" class="num"><button type="button">Stars</button></th>
           </tr>
         </thead>
@@ -180,14 +184,14 @@
   <section class="wrap thanks" aria-labelledby="thanks-title">
     <div class="thanks__inner">
       <h2 id="thanks-title">Thanks</h2>
-      <p class="thanks__intro">These people made RecompHaven better: they submitted games that are now on the list, or sent feedback that changed the site. <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit a game</a> to join them.</p>
+      <p class="thanks__intro">These people made RecompHaven better: they submitted games that are now on the list, or sent feedback that changed the site. <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit a game</a> or <a href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener">send feedback</a> to join them.</p>
       <ul id="thanks-list" class="thanks__list"></ul>
     </div>
   </section>
 </main>
 
 <footer class="wrap footer">
-  <p>Missing a recomp, or spotted a mistake? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit it on GitHub</a>.</p>
+  <p>Missing a recomp? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit it on GitHub</a>. Spotted a mistake in a summary or tier, or have an idea for the site? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener">Send feedback</a>.</p>
   <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
   <p>Data snapshot <time id="snapshot"></time>. Base data from <a href="https://github.com/nio03/unricopie">Recompendium</a> (MIT License, © 2026 Recompendium contributors), with repository stats from GitHub. Genres, stages and quality tiers are RecompHaven's own. Box art comes from the <a href="https://github.com/libretro-thumbnails/libretro-thumbnails">libretro thumbnails</a> project and Wikipedia, and belongs to each game's publisher. Operating system support comes from each project's GitHub releases and README; logos from <a href="https://simpleicons.org/">Simple Icons</a>.</p>
 </footer>

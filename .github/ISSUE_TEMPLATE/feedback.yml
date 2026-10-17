@@ -1,0 +1,44 @@
+name: Send feedback
+description: Feedback on a game's summary, tier or details, or anything that would make RecompHaven better.
+title: "[Feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make RecompHaven better. Every piece of feedback is read, and anything that changes the site gets you a spot in its Thanks section if you'd like one.
+
+        To suggest a game that's missing, use [Submit a game](https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml) instead.
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: What's it about?
+      options:
+        - A game's summary or details
+        - A game's tier or stage
+        - The site itself (a feature, a bug, the design)
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: game
+    attributes:
+      label: Which game?
+      description: If your feedback is about one game, its name as it appears on the site.
+      placeholder: Lost Odyssey
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Your feedback
+      description: What's wrong, missing or could be better, and why. Links to a project's README or release notes help.
+    validations:
+      required: true
+
+  - type: input
+    id: credit
+    attributes:
+      label: How should we credit you? (optional)
+      description: A GitHub or Reddit username, for the Thanks section if your feedback changes the site. Leave it empty to stay anonymous.
+      placeholder: u/yourname
