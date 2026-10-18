@@ -64,6 +64,71 @@
   const scoreText = (e) => e.userScore.toFixed(1);
   const ratingsText = (e) => `${e.userScoreCount} ${e.userScoreCount === 1 ? 'rating' : 'ratings'}`;
 
+  // Email: the Sunday newsletter and per-project update alerts, run by a Cloudflare Worker
+  // (newsletter/worker.js). The build puts its address in <meta name="rh-mail"> once it's set
+  // up; until then the sign-up forms stay hidden. game.js does the same on game pages.
+  const MAIL_API = ((document.querySelector('meta[name="rh-mail"]') || {}).content || '').replace(/\/+$/, '');
+  const BELL = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  const followForm = (formId, e) => `
+      <form class="mail-form mail-form--follow" id="${formId}" data-mail-form data-recomp="${esc(e.id)}" hidden>
+        <p class="mail-form__lead">Email me as soon as ${esc(e.project || e.title)} puts out a new release.</p>
+        <div class="mail-form__row">
+          <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" aria-label="Your email address">
+          <button class="btn" type="submit">Follow</button>
+        </div>
+        <label class="mail-form__check"><input type="checkbox" name="weekly"> Also send me the Sunday newsletter</label>
+        <input class="mail-form__hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="mail-form__status" role="status"></p>
+      </form>`;
+
+  async function submitMail(form) {
+    const status = form.querySelector('.mail-form__status');
+    const button = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    const email = String(data.get('email') || '').trim();
+    const body = { email, website: String(data.get('website') || ''), weekly: !form.dataset.recomp || data.get('weekly') === 'on' };
+    if (form.dataset.recomp) body.recomp = form.dataset.recomp;
+    button.disabled = true;
+    status.dataset.state = '';
+    status.textContent = 'Sending…';
+    try {
+      const res = await fetch(`${MAIL_API}/subscribe`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const out = await res.json().catch(() => ({}));
+      const ok = res.ok && out.ok !== false;
+      status.dataset.state = ok ? 'ok' : 'error';
+      status.textContent = out.message || (ok ? `Almost done: check ${email} for a link to confirm.` : 'Something went wrong. Please try again later.');
+      if (ok) store.set('rh-mail-email', email);
+    } catch {
+      status.dataset.state = 'error';
+      status.textContent = 'Couldn’t reach the sign-up service. Check your connection and try again.';
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  if (MAIL_API) {
+    document.addEventListener('submit', (ev) => {
+      const form = ev.target.closest('form[data-mail-form]');
+      if (!form) return;
+      ev.preventDefault();
+      submitMail(form);
+    });
+    // "Get update emails" opens its form, with the address used last time filled in.
+    document.addEventListener('click', (ev) => {
+      const toggle = ev.target.closest('[data-follow-toggle]');
+      const form = toggle && document.getElementById(toggle.getAttribute('aria-controls'));
+      if (!form) return;
+      form.hidden = !form.hidden;
+      toggle.setAttribute('aria-expanded', String(!form.hidden));
+      if (form.hidden) return;
+      const input = form.querySelector('input[type="email"]');
+      if (!input.value) input.value = store.get('rh-mail-email') || '';
+      input.focus();
+    });
+  }
+
   const correctionUrl = (e) => `${FEEDBACK_URL}&${new URLSearchParams({
     title: `[Feedback]: ${e.title}`,
     game: e.title,
@@ -430,6 +495,14 @@
     reddit: (n) => [`https://www.reddit.com/user/${encodeURIComponent(n)}/`, `u/${n}`],
   };
 
+  function renderNewsletter() {
+    if (!MAIL_API) return;
+    $('#newsletter').hidden = false;
+    $('#newsletter-link').hidden = false;
+    const input = $('#nl-email');
+    if (!input.value) input.value = store.get('rh-mail-email') || '';
+  }
+
   function renderThanks() {
     const people = (window.RECOMPHAVEN_CREDITS || []).filter((p) => PROFILES[p.site]);
     $('.thanks').hidden = !people.length;
@@ -494,10 +567,12 @@
         ${e.repo ? `<a class="btn" href="${esc(e.repo)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Open repository ↗</a>` : ''}
         ${e.website ? `<a class="btn btn--ghost" href="${esc(e.website)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Project website ↗</a>` : ''}
         <a class="btn btn--ghost" href="${esc(correctionUrl(e))}" target="_blank" rel="noopener" title="Something wrong or out of date? Opens the feedback form on GitHub with this game filled in">${PENCIL}Suggest a correction</a>
+        ${MAIL_API ? `<button class="btn btn--ghost" type="button" data-follow-toggle aria-expanded="false" aria-controls="d-follow">${BELL}Get update emails</button>` : ''}
         <span class="d-minor">
           ${COMMENTS_ON ? `<a class="d-correct" href="games/${slug}/#comments">Rate and comment</a>` : ''}
           ${siblings > 1 ? '' : `<a class="d-correct" href="games/${slug}/">Game page</a>`}
         </span>
+        ${MAIL_API ? followForm('d-follow', e) : ''}
       </div>`;
 
     if (!dialog.open) {
@@ -690,6 +765,7 @@
   readURL();
   buildControls();
   renderPulse();
+  renderNewsletter();
   renderThanks();
   $('#q').value = state.q;
   render();

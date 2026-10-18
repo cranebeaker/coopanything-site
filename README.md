@@ -107,6 +107,10 @@ The nightly refresh can post each new release to a Discord channel, with its box
 
 From the next night on, `tools/announce_releases.py` posts every release that changed since the previous refresh, as long as it's from the last few days. Releases you add by hand in a commit aren't posted. To see what it would post without posting, run `python tools/announce_releases.py --dry-run`.
 
+### Newsletter and update alerts
+
+Visitors can sign up for a Sunday newsletter of the week's new projects and releases, and follow any project to get an email as soon as it puts out a new release. A small Cloudflare Worker keeps the sign-ups and sends the emails through Resend, and two GitHub workflows write them. It stays off, with no sign-up forms on the site, until it's set up: see [newsletter/README.md](newsletter/README.md).
+
 ## Keeping the data fresh
 
 Stars, last push and latest release come from GitHub. To refresh them:

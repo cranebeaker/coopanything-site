@@ -66,6 +66,8 @@
         <h2>Latest releases</h2>
         <a class="pulse__link" href="feed.xml" title="Subscribe to new releases with RSS">
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>RSS</a>
+        <a id="newsletter-link" class="pulse__link" href="#newsletter" title="Get the week's releases by email every Sunday" hidden>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>Newsletter</a>
         <a class="pulse__link" href="releases/">All releases →</a>
       </div>
       <ol id="latest-list" class="pulse__list"></ol>
@@ -177,6 +179,25 @@
           <dt><span class="act act--stalled">Stalled</span></dt><dd>No pushes for over 6 months</dd>
         </dl>
       </div>
+    </div>
+  </section>
+
+  <!-- Shown once the build sets MAIL_API in tools/build_pages.py (newsletter/README.md). -->
+  <section id="newsletter" class="wrap newsletter" aria-labelledby="newsletter-title" hidden>
+    <div class="newsletter__inner">
+      <div class="newsletter__text">
+        <h2 id="newsletter-title">The Sunday newsletter</h2>
+        <p>One email every Sunday with the recomps that were released or updated that week, and the new ones on the list. To hear about one project the moment it updates, use <strong>Get update emails</strong> on its page.</p>
+      </div>
+      <form class="mail-form" data-mail-form>
+        <div class="mail-form__row">
+          <input id="nl-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com" aria-label="Your email address">
+          <button class="btn" type="submit">Subscribe</button>
+        </div>
+        <input class="mail-form__hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="mail-form__status" role="status"></p>
+        <p class="mail-form__fine">You'll get an email to confirm first. Every email has a one-click unsubscribe, and your address is only used for these emails.</p>
+      </form>
     </div>
   </section>
 

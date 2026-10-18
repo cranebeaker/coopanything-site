@@ -1,0 +1,47 @@
+# The Sunday newsletter: the week's new projects and releases, emailed to
+# everyone who signed up on the site (tools/send_digest.py). It runs after
+# Sunday's data refresh. Off until the MAIL_API_URL and MAIL_ADMIN_TOKEN
+# secrets are set: see newsletter/README.md.
+name: Sunday newsletter
+
+on:
+  schedule:
+    - cron: '0 15 * * 0'   # 15:00 UTC every Sunday
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Send one test copy to this address instead of everyone'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newsletter
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0   # new projects are found from last week's data in git history
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Send the newsletter
+        env:
+          MAIL_API_URL: ${{ secrets.MAIL_API_URL }}
+          MAIL_ADMIN_TOKEN: ${{ secrets.MAIL_ADMIN_TOKEN }}
+          TEST_TO: ${{ inputs.test }}
+        run: |
+          pip install pillow
+          if [ -n "$TEST_TO" ]; then
+            python tools/send_digest.py --test "$TEST_TO"
+          else
+            python tools/send_digest.py
+          fi

@@ -35,6 +35,7 @@
   --ok: #1e8549;
   --beta: #0a7a7a;
   --warn: #9e640a;
+  --error: #c2412d;
   --off: #737a8f;
   --tier-ink: #1a1a1a;
   --scan: rgb(20 22 34 / 0.035);
@@ -67,6 +68,7 @@
     --ok: #4cc47f;
     --beta: #3fc7c1;
     --warn: #e3a63c;
+    --error: #ff8a7a;
     --off: #7d8398;
     --scan: rgb(255 255 255 / 0.025);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
@@ -89,6 +91,7 @@
   --ok: #4cc47f;
   --beta: #3fc7c1;
   --warn: #e3a63c;
+  --error: #ff8a7a;
   --off: #7d8398;
   --scan: rgb(255 255 255 / 0.025);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
@@ -792,6 +795,72 @@ button, input, select { font: inherit; color: inherit; }
 .stage-list dd { margin: 0; color: var(--muted); font-size: 0.9rem; }
 
 .stage-list .act { font-size: 0.84rem; font-weight: 600; }
+
+/* ── Email sign-ups (newsletter/worker.js) ────────────── */
+
+.newsletter { padding-block: 0 40px; }
+.newsletter__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px 40px;
+  align-items: start;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+.newsletter h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.newsletter__text p { margin: 0; max-width: 60ch; color: var(--muted); }
+.newsletter__text strong { color: var(--fg); font-weight: 600; }
+
+.mail-form { display: grid; gap: 8px; margin: 0; }
+.mail-form__row { display: flex; gap: 8px; }
+.mail-form input[type="email"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.mail-form input[type="email"]::placeholder { color: var(--muted); }
+.mail-form .btn { flex: none; }
+.mail-form .btn:disabled { opacity: 0.6; cursor: progress; }
+.mail-form__lead { margin: 0; font-weight: 600; }
+.mail-form__check { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--muted); cursor: pointer; }
+.mail-form__check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.mail-form__status { margin: 0; font-size: 0.9rem; min-height: 0; }
+.mail-form__status:empty { display: none; }
+.mail-form__status[data-state="ok"] { color: var(--ok); font-weight: 600; }
+.mail-form__status[data-state="error"] { color: var(--error); font-weight: 600; }
+.mail-form__fine { margin: 0; font-size: 0.8rem; color: var(--muted); }
+/* A field people never see; bots that fill it in are ignored. */
+.mail-form__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+/* The update-alert form opens under its card's or the dialog's buttons. */
+.mail-form--follow {
+  flex-basis: 100%;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.mail-form--follow[hidden] { display: none; }
+
+@media (max-width: 760px) {
+  .newsletter__inner { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .mail-form__row { flex-direction: column; }
+  .mail-form .btn { justify-content: center; }
+}
 
 /* ── Thanks (data/credits.js) ─────────────────────────── */
 

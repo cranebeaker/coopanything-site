@@ -1,5 +1,6 @@
 // Game pages (games/<slug>/, built by tools/build_pages.py): the theme toggle, the ratings and
-// comments, visit counting and the box-art fallback. The list page does its share in app.js.
+// comments, update-email sign-ups, visit counting and the box-art fallback. The list page does
+// its share in app.js.
 (() => {
   'use strict';
 
@@ -80,6 +81,61 @@
   });
   if (document.body.dataset.visit) {
     window.addEventListener('load', () => countVisit(document.body.dataset.visit));
+  }
+
+  // "Get update emails" on a project's card: update alerts by email, through the newsletter
+  // Worker in <meta name="rh-mail"> (newsletter/worker.js). The same as in app.js.
+  const MAIL_API = ((document.querySelector('meta[name="rh-mail"]') || {}).content || '').replace(/\/+$/, '');
+  const remember = {
+    get() { try { return localStorage.getItem('rh-mail-email') || ''; } catch { return ''; } },
+    set(v) { try { localStorage.setItem('rh-mail-email', v); } catch { /* storage unavailable */ } },
+  };
+
+  async function submitMail(form) {
+    const status = form.querySelector('.mail-form__status');
+    const submit = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    const email = String(data.get('email') || '').trim();
+    const body = { email, website: String(data.get('website') || ''), weekly: !form.dataset.recomp || data.get('weekly') === 'on' };
+    if (form.dataset.recomp) body.recomp = form.dataset.recomp;
+    submit.disabled = true;
+    status.dataset.state = '';
+    status.textContent = 'Sending…';
+    try {
+      const res = await fetch(`${MAIL_API}/subscribe`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      const out = await res.json().catch(() => ({}));
+      const ok = res.ok && out.ok !== false;
+      status.dataset.state = ok ? 'ok' : 'error';
+      status.textContent = out.message || (ok ? `Almost done: check ${email} for a link to confirm.` : 'Something went wrong. Please try again later.');
+      if (ok) remember.set(email);
+    } catch {
+      status.dataset.state = 'error';
+      status.textContent = 'Couldn’t reach the sign-up service. Check your connection and try again.';
+    } finally {
+      submit.disabled = false;
+    }
+  }
+
+  if (MAIL_API) {
+    document.addEventListener('submit', (ev) => {
+      const form = ev.target.closest('form[data-mail-form]');
+      if (!form) return;
+      ev.preventDefault();
+      submitMail(form);
+    });
+    document.addEventListener('click', (ev) => {
+      const toggle = ev.target.closest('[data-follow-toggle]');
+      const form = toggle && document.getElementById(toggle.getAttribute('aria-controls'));
+      if (!form) return;
+      form.hidden = !form.hidden;
+      toggle.setAttribute('aria-expanded', String(!form.hidden));
+      if (form.hidden) return;
+      const input = form.querySelector('input[type="email"]');
+      if (!input.value) input.value = remember.get();
+      input.focus();
+    });
   }
 
   // A cover that fails to load turns into the initials placeholder.

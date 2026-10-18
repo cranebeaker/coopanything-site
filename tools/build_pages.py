@@ -56,6 +56,9 @@ COMMENTS_ON = bool(GISCUS['repo_id'] and GISCUS['category_id'])
 # GoatCounter site code (the "recomphaven" in recomphaven.goatcounter.com), or '' for no
 # visit counting. It counts the visits that rank Trending; see tools/track_visits.py.
 GOATCOUNTER = 'recomphaven'
+# The newsletter Worker's address (newsletter/README.md), or '' to leave the sign-up forms out.
+# RH_MAIL_API overrides it, for trying the forms against a test Worker.
+MAIL_API = os.environ.get('RH_MAIL_API') or 'https://recomphaven-mail.intooblivion-riku.workers.dev'
 SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml'
 FEEDBACK_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml'
 STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'assets', 'data']
@@ -238,6 +241,26 @@ def cover_html(e, alt):
 
 PENCIL = ('<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Zm10-14 4 4" '
           'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>')
+BELL = ('<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4" '
+        'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>')
+
+
+def mail_meta():
+    return f'<meta name="rh-mail" content="{esc(MAIL_API)}">\n' if MAIL_API else ''
+
+
+def follow_form(e):
+    """Update alerts for one project: a button and the form it opens (game.js sends it)."""
+    form_id = f'follow-{e["id"]}'
+    return (f'<button class="btn btn--ghost" type="button" data-follow-toggle aria-expanded="false" aria-controls="{esc(form_id)}">'
+            f'{BELL}Get update emails</button>'
+            f'<form class="mail-form mail-form--follow" id="{esc(form_id)}" data-mail-form data-recomp="{esc(e["id"])}" hidden>'
+            f'<p class="mail-form__lead">Email me as soon as {esc(e["project"])} puts out a new release.</p>'
+            '<div class="mail-form__row"><input type="email" name="email" required autocomplete="email" placeholder="you@example.com" '
+            'aria-label="Your email address"><button class="btn" type="submit">Follow</button></div>'
+            '<label class="mail-form__check"><input type="checkbox" name="weekly"> Also send me the Sunday newsletter</label>'
+            '<input class="mail-form__hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">'
+            '<p class="mail-form__status" role="status"></p></form>')
 
 
 def card(e, game, rows):
@@ -322,6 +345,8 @@ def card(e, game, rows):
     links.append(f'<a class="btn btn--ghost" href="{esc(correction)}" target="_blank" rel="noopener" '
                  f'title="Something wrong or out of date? Opens the feedback form on GitHub with this game filled in">'
                  f'{PENCIL}Suggest a correction</a>')
+    if MAIL_API:
+        links.append(follow_form(e))
     cells.append(f'<div class="gp-cell gp-links">{"".join(links)}</div>')
 
     cls = 'gp-card is-pick' if badge else 'gp-card'
@@ -492,7 +517,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="{root}styles.css">
-{analytics_tag()}</head>
+{mail_meta()}{analytics_tag()}</head>
 <body{body_attr}>
 <a class="skip" href="#main">Skip to the content</a>
 
@@ -877,7 +902,7 @@ def main():
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url)
                 .replace('</head>', analytics_tag()
-                         + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + '</head>', 1)
+                         + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + mail_meta() + '</head>', 1)
                 .replace('</footer>', analytics_note() + '</footer>', 1))
 
     os.makedirs(os.path.join(out, 'releases'))

@@ -16,5 +16,9 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "SolarCookies", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
   {"name": "Obvious-Donut-3923", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
   {"name": "web10177", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
-  {"name": "eurojosh", "site": "reddit", "for": "Suggested two Need for Speed: Most Wanted recomps, Forza Horizon 1 and 2, and Forza Motorsport 3, 4 and 5"}
+  {"name": "eurojosh", "site": "reddit", "for": "Suggested two Need for Speed: Most Wanted recomps, Forza Horizon 1 and 2, and Forza Motorsport 3, 4 and 5"},
+  {"name": "JJBareaIsLeFather", "site": "reddit", "for": "Suggested the WWE and SmackDown vs. Raw ports"},
+  {"name": "adeel001", "site": "reddit", "for": "Suggested Golden Sun and Dragon Ball Z: Budokai Tenkaichi 3"},
+  {"name": "boomersky", "site": "reddit", "for": "Suggested adding Nintendo Switch projects"},
+  {"name": "mereshadows", "site": "reddit", "for": "Suggested a weekly newsletter of the latest recomps"}
 ];
