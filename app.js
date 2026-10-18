@@ -497,10 +497,26 @@
 
   function renderNewsletter() {
     if (!MAIL_API) return;
-    $('#newsletter').hidden = false;
-    $('#newsletter-link').hidden = false;
+    const section = $('#newsletter');
     const input = $('#nl-email');
+    section.hidden = false;
+    $('#newsletter-btn').hidden = false;
     if (!input.value) input.value = store.get('rh-mail-email') || '';
+    // The masthead's Newsletter button scrolls down to the box and puts the cursor in it,
+    // without touching the #id hash the details dialog uses.
+    document.addEventListener('click', (ev) => {
+      if (!ev.target.closest('a[href="#newsletter"]')) return;
+      ev.preventDefault();
+      goToNewsletter();
+    });
+  }
+
+  // Smooth for a short way; a jump from far up a phone's long card list.
+  function goToNewsletter() {
+    const section = $('#newsletter');
+    const far = Math.abs(section.getBoundingClientRect().top) > 4 * window.innerHeight;
+    section.scrollIntoView({ behavior: far ? 'auto' : 'smooth', block: 'center' });
+    $('#nl-email').focus({ preventScroll: true });
   }
 
   function renderThanks() {
@@ -770,6 +786,13 @@
   $('#q').value = state.q;
   render();
 
+  // Game pages' Newsletter button links to #newsletter, a box that was still hidden when the
+  // browser looked for it. Done again after load, when the browser's own jump to #newsletter
+  // has taken the cursor back out of the box.
+  if (MAIL_API && location.hash === '#newsletter') {
+    goToNewsletter();
+    window.addEventListener('load', () => setTimeout(goToNewsletter, 0), { once: true });
+  }
   const initial = decodeURIComponent(location.hash.slice(1));
   if (initial && DATA.some((e) => e.id === initial)) openDetail(initial, { push: false });
 })();

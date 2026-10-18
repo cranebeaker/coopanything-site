@@ -2,7 +2,7 @@
 
 Two kinds of email, both sign-up only:
 
-- **The Sunday newsletter**: one email every Sunday with the projects that put out a release that week and the projects new to the list. The sign-up box is near the bottom of the front page, linked from **Newsletter** next to Latest releases.
+- **The Sunday newsletter**: one email every Sunday with the projects that put out a release that week and the projects new to the list. The sign-up box is near the bottom of the front page, and the **Newsletter** button at the top of every page goes straight to it.
 - **Update alerts**: **Get update emails** on a project's card (on its game page, or in its details on the front page) emails that person as soon as the project puts out a new release. The check runs every hour, so alerts arrive within about an hour of the release.
 
 Everyone confirms by email before anything is sent, and every email has a one-click unsubscribe and a link to a page where people manage what they get. Someone who turns everything off is deleted, and sign-ups never confirmed are deleted after three days.

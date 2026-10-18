@@ -201,6 +201,16 @@ button, input, select { font: inherit; color: inherit; }
 /* Send feedback: the same pill, outlined, so Submit a game stays the main action. */
 .feedback-btn { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .feedback-btn:hover { filter: none; background: var(--accent-soft); }
+/* As the header narrows, Newsletter and Send feedback (both outlined) drop their labels
+   first, so Submit a game keeps its own; then it goes too. */
+@media (max-width: 1059px) {
+  .feedback-btn { width: 42px; padding: 0; justify-content: center; }
+  .feedback-btn span { display: none; }
+}
+@media (max-width: 660px) {
+  .submit-btn { width: 42px; padding: 0; justify-content: center; }
+  .submit-btn span { display: none; }
+}
 
 .d-correct { margin-left: auto; align-self: center; font-size: 0.85rem; color: var(--muted); }
 .d-correct:hover { color: var(--accent); }
@@ -852,7 +862,6 @@ button, input, select { font: inherit; color: inherit; }
   border-radius: var(--radius);
   background: var(--surface-2);
 }
-.mail-form--follow[hidden] { display: none; }
 
 @media (max-width: 760px) {
   .newsletter__inner { grid-template-columns: minmax(0, 1fr); }
@@ -1273,9 +1282,12 @@ dialog::backdrop { background: var(--backdrop); }
   .sort-pair { flex: 1; }
   .sort-pair select { flex: 1; min-width: 0; }
   .d-body { padding: 18px 16px 20px; }
-  /* Logo, gap and the three round buttons fit a 375px phone. */
-  .wordmark { --logo-w: min(240px, 100vw - 182px); }
+  /* The four round buttons sit two by two beside the wordmark, which leaves the logo
+     its full 240px on a 375px phone; on game pages' one-line header they stay in a row. */
+  .wordmark { --logo-w: min(240px, 100vw - 136px); }
   .masthead__actions { gap: 8px; }
+  .masthead:not(.masthead--slim) .masthead__actions { display: grid; grid-template-columns: repeat(2, 40px); }
+  .masthead--slim .home-link { --logo-w: min(150px, 100vw - 232px); }
   .masthead__actions .icon-btn { width: 40px; height: 40px; }
   .submit-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
   .submit-btn span { display: none; }

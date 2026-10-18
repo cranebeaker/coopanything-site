@@ -249,6 +249,17 @@ def mail_meta():
     return f'<meta name="rh-mail" content="{esc(MAIL_API)}">\n' if MAIL_API else ''
 
 
+def newsletter_button(root):
+    """The masthead's Newsletter button, to the sign-up box on the front page (index.html has its own)."""
+    if not MAIL_API:
+        return ''
+    return (f'<a class="submit-btn feedback-btn mail-btn" href="{root}#newsletter" aria-label="Newsletter" '
+            'title="Get the week\'s new and updated recomps by email every Sunday">\n'
+            '        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 6 9-6" '
+            'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>\n'
+            '        <span>Newsletter</span>\n      </a>\n      ')
+
+
 def follow_form(e):
     """Update alerts for one project: a button and the form it opens (game.js sends it)."""
     form_id = f'follow-{e["id"]}'
@@ -525,7 +536,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
   <div class="wrap masthead__top">
     <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="Re:Haven, back to every recomp" width="1615" height="338"></a>
     <div class="masthead__actions">
-      <a class="submit-btn feedback-btn" href="{FEEDBACK_URL}" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
+      {newsletter_button(root)}<a class="submit-btn feedback-btn" href="{FEEDBACK_URL}" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
         <span>Send feedback</span>
       </a>
