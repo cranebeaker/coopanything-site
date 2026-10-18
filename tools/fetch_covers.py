@@ -63,6 +63,7 @@ SYSTEMS = {
     'wiiu': ['Nintendo - Wii U'],
     'ps1': ['Sony - PlayStation'],
     'ps2': ['Sony - PlayStation 2'],
+    'ps3': ['Sony - PlayStation 3'],
     'ps4': ['Sony - PlayStation 4'],
     'psp': ['Sony - PlayStation Portable'],
     'megadrive': ['Sega - Mega Drive - Genesis'],

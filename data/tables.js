@@ -45,6 +45,11 @@ window.RECOMPHAVEN_TABLES = {
    "short": "PS2",
    "color": "#1f48a8"
   },
+  "ps3": {
+   "label": "PlayStation 3",
+   "short": "PS3",
+   "color": "#2b2f3a"
+  },
   "ps4": {
    "label": "PlayStation 4",
    "short": "PS4",
