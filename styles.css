@@ -515,7 +515,6 @@ button, input, select { font: inherit; color: inherit; }
 /* ── Operating systems ── */
 .os-icon { width: 15px; height: 15px; fill: currentColor; flex: none; display: block; }
 .os-set { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); }
-.os-slot.is-off { opacity: 0.14; }
 .os-set--inline { gap: 6px; margin-left: 2px; color: var(--muted); }
 .os-set--inline .os-icon { width: 13px; height: 13px; }
 

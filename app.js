@@ -220,12 +220,13 @@
   const aiTag = (e) => (e.ai ? '<span class="ai" title="The project discloses substantial AI-generated code">AI</span>' : '');
   const osIcon = (k) => `<svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${OS[k].path}"/></svg>`;
 
-  // Table: all three logos in fixed slots, the unsupported ones dimmed, so rows line up.
+  // Table: only the systems it runs on, in the filter's order. A faded logo for the others
+  // read as "runs here too".
   function osSlots(e) {
     if (!e.platforms) return '<span class="muted small" title="Not stated by the project">—</span>';
     const names = e.platforms.map((k) => OS[k].label).join(', ');
-    return `<span class="os-set" title="Runs on ${esc(names)}" aria-label="Runs on ${esc(names)}">${OS_ORDER.map((k) =>
-      `<span class="os-slot${e.platforms.includes(k) ? '' : ' is-off'}">${osIcon(k)}</span>`).join('')}</span>`;
+    return `<span class="os-set" title="Runs on ${esc(names)}" aria-label="Runs on ${esc(names)}">${OS_ORDER
+      .filter((k) => e.platforms.includes(k)).map(osIcon).join('')}</span>`;
   }
 
   // Cards: only the supported logos.
