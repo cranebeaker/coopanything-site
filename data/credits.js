@@ -8,7 +8,7 @@
  */
 window.RECOMPHAVEN_CREDITS = [
   {"name": "TekRantGaming", "site": "github", "for": "Submitted Dig Dug, Point Blank, The Simpsons Wrestling, Earthworm Jim HD, Outpost Kaloki X, King Kong and South Park: Let's Go Tower Defense Play!"},
-  {"name": "leonardo7800g-ai", "site": "github", "for": "Submitted inFAMOUS Second Son, EA Sports UFC 3 and Def Jam: Fight for NY"},
+  {"name": "leonardo7800g-ai", "site": "github", "for": "Submitted EA Sports UFC 3 and Def Jam: Fight for NY"},
   {"name": "kayliox", "site": "github", "for": "Submitted Transformers Armada: Prelude to Energon"},
   {"name": "dguillot-gh", "site": "github", "for": "Submitted The Legend of Zelda: Phantom Hourglass"},
   {"name": "SolidCat2877", "site": "reddit", "for": "Feedback on r/recomps that shaped the site"},
@@ -21,5 +21,14 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "adeel001", "site": "reddit", "for": "Suggested Golden Sun and Dragon Ball Z: Budokai Tenkaichi 3"},
   {"name": "boomersky", "site": "reddit", "for": "Suggested adding Nintendo Switch projects"},
   {"name": "mereshadows", "site": "reddit", "for": "Suggested a weekly newsletter of the latest recomps"},
-  {"name": "tholurossleuth", "site": "reddit", "for": "Suggested showing only the systems a recomp runs on"}
+  {"name": "tholurossleuth", "site": "reddit", "for": "Suggested showing only the systems a recomp runs on"},
+  {"name": "TheGh0stShip", "site": "github", "for": "Submitted the BattleTanx and BattleTanx: Global Assault decompilations, disassembly and PC port"},
+  {"name": "jcsix694", "site": "github", "for": "Submitted Def Jam Vendetta"},
+  {"name": "crazyriddler", "site": "github", "for": "Submitted Call of Duty: Finest Hour Remastered"},
+  {"name": "GurekamDhillon", "site": "github", "for": "Submitted GD's Melee"},
+  {"name": "Matteo842", "site": "github", "for": "Submitted Crash Bandicoot Launcher"},
+  {"name": "startupandhold", "site": "github", "for": "Submitted 3 on 3 NHL Arcade"},
+  {"name": "parabolee", "site": "github", "for": "Submitted Perfect Dark Zero Reinstated"},
+  {"name": "BigDaddyJRich", "site": "github", "for": "Submitted WWE SmackDown! Here Comes the Pain"},
+  {"name": "vamidi", "site": "github", "for": "Submitted Tales of Legendia"}
 ];

@@ -85,6 +85,11 @@ window.RECOMPHAVEN_TABLES = {
    "short": "GBA",
    "color": "#4b2f8f"
   },
+  "gbc": {
+   "label": "Game Boy Color",
+   "short": "GBC",
+   "color": "#5a4fcf"
+  },
   "nds": {
    "label": "Nintendo DS",
    "short": "DS",

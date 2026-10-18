@@ -705,9 +705,24 @@
       if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
     }
     dialog.scrollTop = 0;
-    if (push) setHash(e.id);
+    if (push) pushDetail(e.id);
     countVisit(e);
   }
+
+  // Opening a game's details adds a history entry (#id), so the browser's or phone's Back button
+  // closes them instead of leaving the site. detailPushed says the current entry is one this page
+  // added, so closing with ✕, Esc or a click outside steps back over it rather than leaving it in
+  // the way of the next Back. An entry the page didn't add (a shared #id link) is never stepped
+  // back over: that would leave the site.
+  let detailPushed = false;
+  function pushDetail(id) {
+    if (detailPushed) return setHash(id);
+    try {
+      history.pushState({ detail: id }, '', location.pathname + location.search + '#' + id);
+      detailPushed = true;
+    } catch { setHash(id); }
+  }
+  const ownsEntry = (id) => !!id && !!history.state && history.state.detail === id;
 
   function closeDetail() {
     if (dialog.open) dialog.close();
@@ -729,8 +744,13 @@
   });
 
   dialog.addEventListener('close', () => {
-    setHash('');
     dialog.querySelectorAll('.video iframe').forEach((frame) => frame.remove());
+    if (detailPushed) {
+      detailPushed = false;
+      history.back();
+    } else {
+      setHash('');
+    }
   });
   dialog.addEventListener('click', (ev) => {
     if (ev.target === dialog || ev.target.closest('[data-close]')) closeDetail();
@@ -754,7 +774,7 @@
       if (state.hideAI) p.set('noai', '1');
       if (state.sort !== DEFAULTS.sort || state.dir !== DEFAULTS.dir) { p.set('sort', state.sort); p.set('dir', state.dir); }
       const qs = p.toString();
-      history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+      history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
     } catch { /* history unavailable */ }
   }
 
@@ -878,8 +898,11 @@
     }
   });
 
+  // Back and Forward: open or close the details to match the address. Set detailPushed first, so a
+  // close caused by Back doesn't step back a second time.
   window.addEventListener('hashchange', () => {
     const id = decodeURIComponent(location.hash.slice(1));
+    detailPushed = ownsEntry(id);
     if (id && DATA.some((e) => e.id === id)) openDetail(id, { push: false });
     else closeDetail();
   });
@@ -907,5 +930,8 @@
     window.addEventListener('load', () => setTimeout(goToNewsletter, 0), { once: true });
   }
   const initial = decodeURIComponent(location.hash.slice(1));
-  if (initial && DATA.some((e) => e.id === initial)) openDetail(initial, { push: false });
+  if (initial && DATA.some((e) => e.id === initial)) {
+    detailPushed = ownsEntry(initial);  // true when Back from a game page returns to open details
+    openDetail(initial, { push: false });
+  }
 })();

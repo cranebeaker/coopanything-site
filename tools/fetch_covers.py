@@ -54,6 +54,7 @@ SYSTEMS = {
     'n64': ['Nintendo - Nintendo 64'],
     'snes': ['Nintendo - Super Nintendo Entertainment System'],
     'gba': ['Nintendo - Game Boy Advance'],
+    'gbc': ['Nintendo - Game Boy Color'],
     'nds': ['Nintendo - Nintendo DS'],
     '3ds': ['Nintendo - Nintendo 3DS'],
     'switch': [],  # libretro has no Switch box art: Wikipedia only

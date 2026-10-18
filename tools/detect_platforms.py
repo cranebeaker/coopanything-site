@@ -53,7 +53,7 @@ README_OS = {
     'linux': re.compile(r'\blinux\b|steam ?deck|steamos|appimage', re.I),
     'macos': re.compile(r'\bmac ?os\b|\bmacos\b|apple silicon|\bmac\b(?!\s*address)|\bos ?x\b', re.I),
     'android': re.compile(r'\bandroid\b|\.apk\b', re.I),
-    'switch': re.compile(r'\.nro\b|atmosph[eè]re|\bhbmenu\b|\bnintendo switch\b|\bswitch (?:homebrew|build|port|release)s?\b', re.I),
+    'switch': re.compile(r'\.nro\b|atmosphère|\batmosphere (?:cfw|custom firmware)|\bhbmenu\b|\bnintendo switch\b|\bswitch (?:homebrew|build|port|release)s?\b', re.I),
 }
 NEGATION = re.compile(
     r"not (?:yet )?(?:supported|available|built|tested|working|a target)|unsupported|untested|planned|"
