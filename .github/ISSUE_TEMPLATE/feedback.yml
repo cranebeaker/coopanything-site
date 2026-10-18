@@ -7,7 +7,7 @@ body:
       value: |
         Thanks for helping make Recomp Haven better. Every piece of feedback is read, and anything that changes the site gets you a spot in its Thanks section if you'd like one.
 
-        To suggest a game that's missing, use [Submit a game](https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml) instead.
+        To suggest a game that's missing, use [Submit a game](https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml) instead. If something on the site is broken, [Report a bug](https://github.com/rikuwru/recomphaven/issues/new?template=bug-report.yml).
 
   - type: dropdown
     id: topic

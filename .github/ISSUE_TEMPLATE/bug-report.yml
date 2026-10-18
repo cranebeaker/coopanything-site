@@ -1,0 +1,55 @@
+name: Report a bug
+description: Something on the site is broken, wrong or hard to use. For a game's tier or summary, use Send feedback instead.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. Fixed bugs get you a spot in the site's Thanks section if you'd like one.
+
+        **Security problems:** please don't post them here. Report them privately instead: see [SECURITY.md](https://github.com/rikuwru/recomphaven/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What went wrong?
+      description: What you expected to happen, and what happened instead.
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Which page?
+      description: The page's address.
+      placeholder: https://recomphaven.com/games/pt/
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can it be seen?
+      description: The steps that lead to it, if it doesn't happen right away.
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+
+  - type: input
+    id: device
+    attributes:
+      label: Browser and device
+      placeholder: Firefox on Windows 11, Safari on iPhone 15
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: You can paste images straight into this box.
+
+  - type: input
+    id: credit
+    attributes:
+      label: How would you like to be credited?
+      description: Optional. A GitHub or Reddit username for the Thanks section, or leave it empty.
+      placeholder: u/yourname

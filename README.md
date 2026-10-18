@@ -4,6 +4,14 @@ A tracker for every game recompilation, released and in progress. Sort and filte
 
 It's a static site: `index.html`, `styles.css`, `app.js`, and the data in `data/recomps.js` and `data/tables.js`. On deploy, `tools/build_pages.py` adds a page and a link-preview image for every game.
 
+**It's open source**, under the [MIT License](LICENSE): read the code, reuse it, and send fixes as pull requests. Found something broken? [Report a bug](https://github.com/rikuwru/recomphaven/issues/new?template=bug-report.yml). Security problems go through [SECURITY.md](SECURITY.md) instead, so they can be fixed before they're public.
+
+## Made with AI help
+
+Recomp Haven is built with AI. Most of its code, tools and documentation, and the project summaries (researched from each project's README and releases), were written with Claude, Anthropic's AI model, working through Claude Code. I (rikuwru) direct it, check and test what it makes, and decide what goes on the site: which projects are listed, their tiers and stages, and how the site works. Commits made this way end with a "Co-Authored-By: Claude" line, so the history shows which ones.
+
+The site holds the projects it lists to the same standard: entries tagged "AI" disclose substantial AI-written code, and anyone can hide them with the "Hide AI-assisted" switch. If a summary or tier looks wrong, [send feedback](https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml).
+
 ## Run it locally
 
 Open `index.html` in a browser, or serve the folder:
@@ -180,10 +188,14 @@ The site's "Submit a game" button and the footer link open the GitHub issue form
 
 The **Send feedback** button, the footer link and each game's "Suggest a correction" link open a second form, `.github/ISSUE_TEMPLATE/feedback.yml`, for feedback on a game's summary, tier or details, or on the site itself. Corrections arrive with the game and project filled in, and the form asks how the person would like to be credited.
 
+Bugs in the site have their own form, `.github/ISSUE_TEMPLATE/bug-report.yml` (**Report a bug** in the footer of every page), and security problems are reported privately as described in `SECURITY.md`. For that, turn on **Settings → Security → Private vulnerability reporting** in the repo.
+
 The **Thanks** section near the bottom of the site credits everyone whose submission was added or whose feedback changed the site. Add people to `data/credits.js`, with their GitHub or Reddit username and a few words on what they did.
 
 ## Sources and license
 
-The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are Recomp Haven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.
+The code is under the [MIT License](LICENSE), © 2026 rikuwru.
+
+The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are Recomp Haven's own. Box art comes from the libretro thumbnails project, Wikipedia and, for a few games, other fan wikis, and belongs to each game's publisher: it isn't covered by the MIT License. The fonts in `tools/fonts/` (used for the link-preview images) are under the SIL Open Font License; their notices are beside them. The first snapshot is from 16 October 2026.
 
 Recomp Haven links to projects and hosts no game files. Every recomp needs your own legally obtained copy of the game.

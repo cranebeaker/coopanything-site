@@ -61,6 +61,8 @@ GOATCOUNTER = 'recomphaven'
 MAIL_API = os.environ.get('RH_MAIL_API') or 'https://recomphaven-mail.intooblivion-riku.workers.dev'
 SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml'
 FEEDBACK_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml'
+BUG_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=bug-report.yml'
+REPO_URL = 'https://github.com/rikuwru/recomphaven'
 STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
@@ -558,7 +560,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 
 <footer class="wrap footer">
   <p>Every recomp on this list needs your own legally obtained copy of the game. Recomp Haven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are Recomp Haven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a>.</p>
+  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are Recomp Haven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a> · <a href="{BUG_URL}" target="_blank" rel="noopener">Report a bug</a> · <a href="{REPO_URL}" target="_blank" rel="noopener">Source code</a> (MIT License; built with AI help).</p>
 {analytics_note()}</footer>
 
 <script src="{root}game.js"></script>
