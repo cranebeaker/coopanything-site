@@ -1,11 +1,11 @@
 name: Send feedback
-description: Feedback on a game's summary, tier or details, or anything that would make RecompHaven better.
+description: Feedback on a game's summary, tier or details, or anything that would make Recomp Haven better.
 title: "[Feedback]: "
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping make RecompHaven better. Every piece of feedback is read, and anything that changes the site gets you a spot in its Thanks section if you'd like one.
+        Thanks for helping make Recomp Haven better. Every piece of feedback is read, and anything that changes the site gets you a spot in its Thanks section if you'd like one.
 
         To suggest a game that's missing, use [Submit a game](https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml) instead.
 

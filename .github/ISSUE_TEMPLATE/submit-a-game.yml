@@ -1,11 +1,11 @@
 name: Submit a game
-description: Suggest a recomp, decomp or native port that's missing from RecompHaven, or a correction to one that's listed.
+description: Suggest a recomp, decomp or native port that's missing from Recomp Haven, or a correction to one that's listed.
 title: "[Submission]: "
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping keep RecompHaven complete. Every submission is checked by hand before it goes on the site.
+        Thanks for helping keep Recomp Haven complete. Every submission is checked by hand before it goes on the site.
 
   - type: dropdown
     id: kind

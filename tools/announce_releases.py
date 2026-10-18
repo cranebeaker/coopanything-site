@@ -56,7 +56,7 @@ def embed(e):
         'description': '\n'.join(lines),
         'color': int(TIER_COLORS[e['quality']].lstrip('#'), 16),
         'timestamp': f'{e["versionDate"]}T00:00:00Z',
-        'footer': {'text': 'RecompHaven'},
+        'footer': {'text': 'Recomp Haven'},
     }
     if e.get('cover'):
         out['thumbnail'] = {'url': f'{SITE}/{e["cover"]}'}
@@ -102,7 +102,7 @@ def main():
         print('Not posted: ' + ('dry run.' if args.dry_run else 'DISCORD_WEBHOOK_URL is not set.'))
         return
     for i in range(0, len(new), EMBEDS_PER_MESSAGE):
-        post(url, {'username': 'RecompHaven', 'avatar_url': f'{SITE}/assets/icons/icon-192.png',
+        post(url, {'username': 'Recomp Haven', 'avatar_url': f'{SITE}/assets/icons/icon-192.png',
                    'embeds': [embed(e) for e in new[i:i + EMBEDS_PER_MESSAGE]]})
     print('Posted to Discord.')
 

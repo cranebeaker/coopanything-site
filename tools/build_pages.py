@@ -385,7 +385,7 @@ def page(game, share_url, snapshot):
         title = f'{name} · {e["project"]}'
         by = f' by {e["team"]}' if e.get('team') and e['team'] != e['project'] else ''
         description = (f'{e["project"]}{by}: {STAGES[e["stage"]]["label"].lower()}, rated {e["quality"]} '
-                       f'({TIERS[e["quality"]]["label"]}) on RecompHaven. ' + (e.get('summary') or ''))
+                       f'({TIERS[e["quality"]]["label"]}) on Recomp Haven. ' + (e.get('summary') or ''))
         lede = (f'{esc(e["project"])}{esc(by)}: {esc(STAGES[e["stage"]]["label"].lower())}, '
                 f'rated {e["quality"]} ({esc(TIERS[e["quality"]]["label"])}).')
     if len(description) > 200:
@@ -437,7 +437,7 @@ def page(game, share_url, snapshot):
 {comments_html(game)}
   <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
     return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
-                    image_alt=f'{name} on RecompHaven: {pick["project"]}, {pick["quality"]} tier',
+                    image_alt=f'{name} on Recomp Haven: {pick["project"]}, {pick["quality"]} tier',
                     body=body, snapshot=snapshot, visit=None if multi else pick['id'])
 
 
@@ -506,11 +506,11 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{esc(title)} · RecompHaven</title>
+<title>{esc(title)} · Recomp Haven</title>
 <meta name="description" content="{esc(description)}">
 <link rel="canonical" href="{url}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="RecompHaven">
+<meta property="og:site_name" content="Recomp Haven">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:url" content="{url}">
@@ -519,7 +519,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{esc(image_alt)}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="alternate" type="application/rss+xml" title="RecompHaven: latest releases" href="{SITE}/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Recomp Haven: latest releases" href="{SITE}/feed.xml">
 <link rel="icon" href="{root}favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icons/icon-192.png">
@@ -557,8 +557,8 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 </main>
 
 <footer class="wrap footer">
-  <p>Every recomp on this list needs your own legally obtained copy of the game. RecompHaven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are RecompHaven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a>.</p>
+  <p>Every recomp on this list needs your own legally obtained copy of the game. Recomp Haven links to projects and hosts no game files.</p>
+  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are Recomp Haven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a>.</p>
 {analytics_note()}</footer>
 
 <script src="{root}game.js"></script>
@@ -636,7 +636,7 @@ def releases_page(entries, share_url, snapshot):
   <header class="rl-head">
     <div class="gp-hero__text">
       <h1 class="gp-title">Latest releases</h1>
-      <p class="gp-lede">The newest release of every project on RecompHaven, newest first.
+      <p class="gp-lede">The newest release of every project on Recomp Haven, newest first.
         {recent} {'project' if recent == 1 else 'projects'} released something in the last 30 days.</p>
     </div>
     <a class="btn btn--ghost" href="../feed.xml">{RSS_ICON} RSS feed</a>
@@ -644,7 +644,7 @@ def releases_page(entries, share_url, snapshot):
 
 ''' + '\n\n'.join(sections)
     return document(title='Latest releases', description=(
-        'The newest releases of every game recompilation, decompilation and native port on RecompHaven, '
+        'The newest releases of every game recompilation, decompilation and native port on Recomp Haven, '
         'newest first. Subscribe with RSS.'), path='releases/', share_url=share_url,
         image_alt='Recomp Haven: Emulation is irrelevant.', body=body, snapshot=snapshot)
 
@@ -671,10 +671,10 @@ def feed(entries, limit=50):
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>RecompHaven: latest releases</title>
+  <title>Recomp Haven: latest releases</title>
   <link>{SITE}/releases/</link>
   <atom:link href="{SITE}/feed.xml" rel="self" type="application/rss+xml"/>
-  <description>New releases of game recompilations, decompilations and native ports, from RecompHaven.</description>
+  <description>New releases of game recompilations, decompilations and native ports, from Recomp Haven.</description>
   <language>en</language>
   <lastBuildDate>{format_datetime(dt.datetime.now(dt.timezone.utc))}</lastBuildDate>
 ''' + '\n'.join(items) + '''

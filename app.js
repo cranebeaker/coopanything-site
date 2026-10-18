@@ -481,7 +481,7 @@
       `<span title="${esc(fmtDate(e.versionDate))}">${esc(relTime(e.versionDate))}</span>`)).join('');
     $('#trending-list').innerHTML = TRENDING.length
       ? TRENDING.map((e) => pulseRow(e, esc(e.project || ''), BY_VISITS
-        ? `<span title="People who opened this project on RecompHaven in the last 3 days">${e.visitsWeek.toLocaleString('en')} visitors</span>`
+        ? `<span title="People who opened this project on Recomp Haven in the last 3 days">${e.visitsWeek.toLocaleString('en')} visitors</span>`
         : `<span title="GitHub stars gained in the last 7 days"><span class="gain">+${e.starsWeek.toLocaleString('en')}</span> stars</span>`)).join('')
       : `<li class="pulse__empty">${DATA.some((e) => e.starsWeek != null)
         ? 'A quiet week: no project has gained more than a star.'

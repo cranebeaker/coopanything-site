@@ -1,4 +1,4 @@
-# RecompHaven
+# Recomp Haven
 
 A tracker for every game recompilation, released and in progress. Sort and filter by console, genre, quality tier, stage, toolchain, features and activity.
 
@@ -66,7 +66,7 @@ None of this is committed: it's rebuilt on every deploy, so it follows the data.
 The front page opens with two panels, **Latest releases** and **Trending releases**.
 
 - **Latest releases** lists the newest `version` / `versionDate` in the data, so it updates with the nightly refresh on its own. The build also makes a full list at `/releases/` and an RSS feed at `/feed.xml`. The data only keeps each project's latest release, so a project that ships twice in one day shows its newer version.
-- **Trending releases** ranks projects by how many people opened them on RecompHaven in the last 3 days (`visitsWeek`, see "Counting visits" below), recounted by the nightly refresh so it changes every day, and there's a matching "Trending" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
+- **Trending releases** ranks projects by how many people opened them on Recomp Haven in the last 3 days (`visitsWeek`, see "Counting visits" below), recounted by the nightly refresh so it changes every day, and there's a matching "Trending" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
 - **Stars this week** (the green "+N" next to star counts) come from `tools/track_stars.py`, which counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
 
 ### Counting visits
@@ -184,6 +184,6 @@ The **Thanks** section near the bottom of the site credits everyone whose submis
 
 ## Sources and license
 
-The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are RecompHaven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.
+The base data (project names, statuses, repositories, descriptions and GitHub stats) comes from [Recompendium](https://github.com/nio03/unricopie), used under the MIT License. Its notice is in `data/LICENSE-recompendium.txt` and must stay with the data. Genres, stages, quality tiers and the entries added by hand since are Recomp Haven's own. Box art comes from the libretro thumbnails project and Wikipedia, and belongs to each game's publisher. The first snapshot is from 16 October 2026.
 
-RecompHaven links to projects and hosts no game files. Every recomp needs your own legally obtained copy of the game.
+Recomp Haven links to projects and hosts no game files. Every recomp needs your own legally obtained copy of the game.
