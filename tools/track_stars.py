@@ -3,7 +3,7 @@
 
 Sets "starsWeek" on every entry whose repo is on github.com. GitHub records
 when each star was given, so this reads the newest stars first and stops at
-the first one older than a week. The site's "Trending this week" row and
+the first one older than a week. The site's "Trending releases" panel and
 Trending sort use it.
 
 Run it after refresh_stats.py: it starts from the star count that sets.

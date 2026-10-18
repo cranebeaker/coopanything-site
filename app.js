@@ -43,7 +43,7 @@
     started: { label: 'Project start', dir: 'desc', get: (e) => e.started, dirs: ['Oldest first', 'Newest first'] },
     stars: { label: 'GitHub stars', dir: 'desc', get: (e) => e.stars, dirs: ['Fewest first', 'Most first'] },
     score: { label: 'User score', dir: 'desc', get: (e) => e.userScore, dirs: ['Lowest first', 'Highest first'] },
-    trending: { label: 'Trending this week', dir: 'desc', get: (e) => trendOf(e), dirs: ['Fewest first', 'Most first'] },
+    trending: { label: 'Trending', dir: 'desc', get: (e) => trendOf(e), dirs: ['Fewest first', 'Most first'] },
     title: { label: 'Name', dir: 'asc', get: (e) => e.title, dirs: ['A to Z', 'Z to A'] },
     year: { label: 'Original release', dir: 'asc', get: (e) => e.year, dirs: ['Oldest first', 'Newest first'] },
     console: { label: 'Console', dir: 'asc', get: (e) => consoleOf(e).label, dirs: ['A to Z', 'Z to A'] },

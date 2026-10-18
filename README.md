@@ -63,10 +63,10 @@ None of this is committed: it's rebuilt on every deploy, so it follows the data.
 
 ## Latest releases and trending
 
-The front page opens with two panels, **Latest releases** and **Trending this week**.
+The front page opens with two panels, **Latest releases** and **Trending releases**.
 
 - **Latest releases** lists the newest `version` / `versionDate` in the data, so it updates with the nightly refresh on its own. The build also makes a full list at `/releases/` and an RSS feed at `/feed.xml`. The data only keeps each project's latest release, so a project that ships twice in one day shows its newer version.
-- **Trending this week** ranks projects by how many people opened them on RecompHaven in the last 7 days (`visitsWeek`, see "Counting visits" below), and there's a matching "Trending this week" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
+- **Trending releases** ranks projects by how many people opened them on RecompHaven in the last 7 days (`visitsWeek`, see "Counting visits" below), recounted by the nightly refresh so it changes every day, and there's a matching "Trending" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
 - **Stars this week** (the green "+N" next to star counts) come from `tools/track_stars.py`, which counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
 
 ### Counting visits
