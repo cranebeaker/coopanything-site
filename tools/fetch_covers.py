@@ -56,6 +56,7 @@ SYSTEMS = {
     'gba': ['Nintendo - Game Boy Advance'],
     'nds': ['Nintendo - Nintendo DS'],
     '3ds': ['Nintendo - Nintendo 3DS'],
+    'switch': [],  # libretro has no Switch box art: Wikipedia only
     'gamecube': ['Nintendo - GameCube'],
     'wii': ['Nintendo - Wii'],
     'wiiu': ['Nintendo - Wii U'],

@@ -90,6 +90,11 @@ window.RECOMPHAVEN_TABLES = {
    "short": "3DS",
    "color": "#a32a4e"
   },
+  "switch": {
+   "label": "Nintendo Switch",
+   "short": "NSW",
+   "color": "#e60012"
+  },
   "arcade": {
    "label": "Arcade",
    "short": "ARC",
