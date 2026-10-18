@@ -1,8 +1,8 @@
 # Every night: fetches box art for entries that don't have a cover yet,
 # refreshes the GitHub stars, last push and latest release in data/recomps.js,
 # works out which operating systems new entries and new releases run on,
-# recounts each project's new stars and visitors over the last 7 days (the
-# front page's Trending releases, so it changes every night), posts new releases
+# recounts each project's new stars over the last 7 days and visitors over the
+# last 3 (the front page's Trending releases, so it changes every night), posts new releases
 # to Discord (once a webhook is set up), and commits whatever changed. Stages, genres and quality tiers stay manual:
 # the job summary lists new covers to check and entries worth a look.
 #

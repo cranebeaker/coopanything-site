@@ -30,7 +30,7 @@
   const OS_ORDER = Object.keys(OS);
   const PLATFORM_SOURCE = TABLES.platformSource;
 
-  // Trending ranks by people who opened each project here this week (visitsWeek, from
+  // Trending ranks by people who opened each project here in the last 3 days (visitsWeek, from
   // tools/track_visits.py). Until there are any, it uses GitHub stars gained this week
   // (starsWeek, from tools/track_stars.py).
   const BY_VISITS = DATA.some((e) => e.visitsWeek > 0);
@@ -481,7 +481,7 @@
       `<span title="${esc(fmtDate(e.versionDate))}">${esc(relTime(e.versionDate))}</span>`)).join('');
     $('#trending-list').innerHTML = TRENDING.length
       ? TRENDING.map((e) => pulseRow(e, esc(e.project || ''), BY_VISITS
-        ? `<span title="People who opened this project on RecompHaven in the last 7 days">${e.visitsWeek.toLocaleString('en')} visitors</span>`
+        ? `<span title="People who opened this project on RecompHaven in the last 3 days">${e.visitsWeek.toLocaleString('en')} visitors</span>`
         : `<span title="GitHub stars gained in the last 7 days"><span class="gain">+${e.starsWeek.toLocaleString('en')}</span> stars</span>`)).join('')
       : `<li class="pulse__empty">${DATA.some((e) => e.starsWeek != null)
         ? 'A quiet week: no project has gained more than a star.'

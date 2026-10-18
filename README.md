@@ -66,12 +66,12 @@ None of this is committed: it's rebuilt on every deploy, so it follows the data.
 The front page opens with two panels, **Latest releases** and **Trending releases**.
 
 - **Latest releases** lists the newest `version` / `versionDate` in the data, so it updates with the nightly refresh on its own. The build also makes a full list at `/releases/` and an RSS feed at `/feed.xml`. The data only keeps each project's latest release, so a project that ships twice in one day shows its newer version.
-- **Trending releases** ranks projects by how many people opened them on RecompHaven in the last 7 days (`visitsWeek`, see "Counting visits" below), recounted by the nightly refresh so it changes every day, and there's a matching "Trending" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
+- **Trending releases** ranks projects by how many people opened them on RecompHaven in the last 3 days (`visitsWeek`, see "Counting visits" below), recounted by the nightly refresh so it changes every day, and there's a matching "Trending" sort. Until visits are being counted, it ranks by GitHub stars gained in the last 7 days (`starsWeek`) instead.
 - **Stars this week** (the green "+N" next to star counts) come from `tools/track_stars.py`, which counts them each night from GitHub's dated star list. It also saves the nightly totals to `data/stars-history.json` (two weeks of them) as a backup in case GitHub won't list the stars.
 
 ### Counting visits
 
-The site sends one event to [GoatCounter](https://www.goatcounter.com/) per project when someone opens its details, opens a game page that has only that project, or follows its repository, website or release-notes link. GoatCounter counts each visitor once per event, so the numbers are close to people rather than clicks. It uses no cookies and keeps no personal data, so the site needs no consent banner. Each night `tools/track_visits.py` reads the last 7 days of counts and stores them as `visitsWeek`.
+The site sends one event to [GoatCounter](https://www.goatcounter.com/) per project when someone opens its details, opens a game page that has only that project, or follows its repository, website or release-notes link. GoatCounter counts each visitor once per event, so the numbers are close to people rather than clicks. It uses no cookies and keeps no personal data, so the site needs no consent banner. Each night `tools/track_visits.py` reads the last 3 days of counts (`WINDOW_DAYS`) and stores them as `visitsWeek`, a name from when it counted a week.
 
 It's off until you set it up:
 
