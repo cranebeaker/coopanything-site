@@ -267,15 +267,89 @@
 
   // ── Filtering & sorting ──────────────────────────────────
 
-  const haystack = new Map(DATA.map((e) => [e.id, [
-    e.title, e.project, e.team, e.toolchain, e.genre, e.developer, consoleOf(e).label, consoleOf(e).short, e.year,
-  ].filter(Boolean).join(' ').toLowerCase()]));
+  // Search forgives typos. Accents, case and punctuation don't count ("pokemon" finds Pokémon,
+  // "pt" finds P.T.), and spaces may be left out ("supermario"). A typed word matches the start of
+  // a word (four letters or more may match inside one too). A typed word that matches nothing that
+  // way matches the closest words in game and project names instead, one letter off in a short
+  // word and two in a longer one, so "legnd of zlda" finds the Zelda games.
+  const fold = (s) => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/['’.]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+  const haystack = new Map(DATA.map((e) => {
+    const text = fold([
+      e.title, e.project, e.team, e.toolchain, e.genre, e.developer, consoleOf(e).label, consoleOf(e).short, e.year,
+    ].filter(Boolean).join(' '));
+    const seq = text.split(' ');
+    const names = [...new Set(fold(`${e.title} ${e.project || ''}`).split(' '))].filter((w) => w.length >= 4);
+    return [e.id, { text, seq, names }];
+  }));
+  const HAY = [...haystack.values()];
+
+  function hasTerm(h, t) {
+    if (t.length >= 4 && h.text.includes(t)) return true;
+    // From the start of a word, running on into the next words when spaces were left out.
+    for (let i = 0; i < h.seq.length; i++) {
+      let run = '';
+      for (let j = i; j < h.seq.length && run.length < t.length; j++) {
+        run += h.seq[j];
+        if (!(run.startsWith(t) || t.startsWith(run))) break;
+        if (run.startsWith(t)) return true;
+      }
+    }
+    return false;
+  }
+  const NAME_WORDS = [...new Set(HAY.flatMap((h) => h.names))];
+
+  // Edit distance with swapped neighbours counting as one edit, giving up past max.
+  function editDistance(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    let before = null;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      let best = i;
+      for (let j = 1; j <= b.length; j++) {
+        let d = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (before && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, before[j - 2] + 1);
+        cur[j] = d;
+        best = Math.min(best, d);
+      }
+      if (best > max) return max + 1;
+      before = prev;
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+
+  // A word is close to what was typed if it's within the typo allowance: one letter for three to
+  // five typed letters, two for more. From five letters, the start of a longer word counts too,
+  // for a word still being typed. One or two typed letters must match exactly.
+  function isNear(typed, word) {
+    const max = typed.length <= 2 ? 0 : typed.length <= 5 ? 1 : 2;
+    if (!max) return false;
+    const forms = typed.length >= 5 ? [word, word.slice(0, typed.length), word.slice(0, typed.length + 1)] : [word];
+    return forms.some((w) => w.length >= typed.length - max && editDistance(typed, w, max) <= max);
+  }
+
+  // The typed words, each with the set of close words it stands for when it matches nothing as
+  // typed. Worked out once per search, not once per row.
+  let searchCache = { q: null, terms: [] };
+  function searchTerms() {
+    if (searchCache.q !== state.q) {
+      const terms = fold(state.q).split(' ').filter(Boolean).map((t) => {
+        const found = HAY.some((h) => hasTerm(h, t));
+        return { t, near: found ? null : new Set(NAME_WORDS.filter((w) => isNear(t, w))) };
+      });
+      searchCache = { q: state.q, terms };
+    }
+    return searchCache.terms;
+  }
 
   function matches(e, ignoreStage) {
     if (state.q) {
-      const hay = haystack.get(e.id);
-      const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
-      if (!terms.every((t) => hay.includes(t))) return false;
+      const h = haystack.get(e.id);
+      for (const { t, near } of searchTerms()) {
+        if (near ? !h.names.some((w) => near.has(w)) : !hasTerm(h, t)) return false;
+      }
     }
     if (state.console && e.console !== state.console) return false;
     if (state.genre && e.genre !== state.genre) return false;
@@ -376,9 +450,12 @@
     renderStageTiles();
 
     const total = DATA.length;
-    $('#count').innerHTML = list.length === total
+    const guessed = state.q ? searchTerms().filter((x) => x.near && x.near.size).map((x) => x.t) : [];
+    $('#count').innerHTML = (list.length === total
       ? `<strong>${total}</strong> recomps tracked`
-      : `Showing <strong>${list.length}</strong> of ${total} recomps`;
+      : `Showing <strong>${list.length}</strong> of ${total} recomps`)
+      + (guessed.length && list.length
+        ? ` <span class="count__guess">· close matches for ${guessed.map((t) => `“${esc(t)}”`).join(', ')}</span>` : '');
 
     $('#reset').disabled = !isFiltered();
     $('#empty').hidden = list.length > 0;

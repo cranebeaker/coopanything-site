@@ -443,6 +443,7 @@ button, input, select { font: inherit; color: inherit; }
 .count { margin: 0; color: var(--muted); }
 .count strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 
+.count__guess { color: var(--muted); font-size: 0.9em; }
 .results__actions { display: flex; align-items: center; gap: 14px; }
 
 .text-btn {
