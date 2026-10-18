@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Average visitors' ratings into "userScore" and "userScoreCount".
+"""Average visitors' ratings into "userScore" and "userScoreCount", and their trend.
 
 People rate and discuss a project in its thread on the game's page: giscus keeps each thread as
 a GitHub Discussion in this repo, titled with the project's id, in the category named in GISCUS
@@ -7,7 +7,14 @@ a GitHub Discussion in this repo, titled with the project's id, in the category 
 "Score: 8/10". Each GitHub account's latest scored comment counts; replies, comments without a
 score, and comments hidden on GitHub (minimized) don't. So to remove a score, hide the comment.
 
-Entries with no ratings lose both fields. It's off until GISCUS is filled in. Needs a token that
+"scoreTrend" is whether people rate a project better since its latest release: the average of
+the scores given since that release ("scoreTrendSince", its tag) minus the average of the ones
+given before it, counting each account's latest score on each side once. Early builds often get
+low scores that stop being fair once the project improves, and this shows that change. It's
+left out until at least MIN_SIDE people have rated on each side, so one or two scores don't read
+as a trend.
+
+Entries with no ratings lose these fields. It's off until GISCUS is filled in. Needs a token that
 can read the repo's discussions: the workflow's GITHUB_TOKEN with "discussions: read".
 
     python tools/track_ratings.py --dry-run
@@ -25,6 +32,7 @@ from build_pages import COMMENTS_ON, GISCUS  # noqa: E402
 from refresh_stats import DATA, dump, load  # noqa: E402
 
 SCORE = re.compile(r'(?<![\d.])(10|[1-9])\s*/\s*10(?![\d.])')
+MIN_SIDE = 5  # people who rated before and after the latest release, before a trend shows
 
 
 def graphql(token, query, **variables):
@@ -53,7 +61,7 @@ DISCUSSIONS = '''query($owner: String!, $name: String!, $category: ID!, $after: 
 
 
 def ratings(token):
-    """{project id: [score, ...]}, one latest score per GitHub account."""
+    """{project id: [(time, account, score), ...]}: every scored top-level comment that isn't hidden."""
     owner, name = GISCUS['repo'].split('/')
     cats = graphql(token, CATEGORIES, owner=owner, name=name)['repository']['discussionCategories']['nodes']
     category = next((c['id'] for c in cats if c['name'] == GISCUS['category']), None)
@@ -64,19 +72,36 @@ def ratings(token):
         page = graphql(token, DISCUSSIONS, owner=owner, name=name, category=category, after=after)
         block = page['repository']['discussions']
         for d in block['nodes']:
-            latest = {}
+            rows = []
             for c in d['comments']['nodes']:
                 m = SCORE.search(c['body'] or '')
                 who = (c.get('author') or {}).get('login')
-                if not m or not who or c['isMinimized']:
-                    continue
-                if who not in latest or c['createdAt'] > latest[who][0]:
-                    latest[who] = (c['createdAt'], int(m[1]))
-            if latest:
-                out[d['title'].strip()] = [score for _, score in latest.values()]
+                if m and who and not c['isMinimized']:
+                    rows.append((c['createdAt'], who, int(m[1])))
+            if rows:
+                out[d['title'].strip()] = rows
         if not block['pageInfo']['hasNextPage']:
             return out
         after = block['pageInfo']['endCursor']
+
+
+def latest_scores(rows):
+    """Each account's latest score."""
+    latest = {}
+    for when, who, score in rows:
+        if who not in latest or when > latest[who][0]:
+            latest[who] = (when, score)
+    return [score for _, score in latest.values()]
+
+
+def trend(rows, since):
+    """Average score given on or after the date `since` minus the average before it, or None
+    while either side has fewer than MIN_SIDE people."""
+    before = latest_scores([r for r in rows if r[0][:10] < since])
+    after = latest_scores([r for r in rows if r[0][:10] >= since])
+    if len(before) < MIN_SIDE or len(after) < MIN_SIDE:
+        return None
+    return round(sum(after) / len(after) - sum(before) / len(before), 1)
 
 
 def main():
@@ -107,21 +132,34 @@ def main():
     text, head, meta, entries = load(DATA)
     ids = {e['id'] for e in entries}
     for e in entries:
-        got = scores.get(e['id'])
+        rows = scores.get(e['id']) or []
+        got = latest_scores(rows)
         if got:
             e['userScore'] = round(sum(got) / len(got), 1)
             e['userScoreCount'] = len(got)
         else:
             e.pop('userScore', None)
             e.pop('userScoreCount', None)
+        change = trend(rows, e['versionDate']) if rows and e.get('versionDate') else None
+        if change is None:
+            e.pop('scoreTrend', None)
+            e.pop('scoreTrendSince', None)
+        else:
+            e['scoreTrend'] = change
+            e['scoreTrendSince'] = e.get('version') or e['versionDate']
     rated = sorted((e for e in entries if e.get('userScore') is not None), key=lambda e: (-e['userScore'], e['title']))
-    print(f'{sum(len(v) for v in scores.values())} ratings across {len(rated)} projects.')
+    print(f'{sum(e["userScoreCount"] for e in rated)} ratings across {len(rated)} projects.')
     for e in rated[:15]:
         print(f'  {e["userScore"]:>4}  ({e["userScoreCount"]})  {e["title"]} ({e.get("project") or e["id"]})')
+    trending = [e for e in rated if e.get('scoreTrend') is not None]
+    print(f'{len(trending)} with a trend (at least {MIN_SIDE} people on each side of the latest release).')
+    for e in sorted(trending, key=lambda e: -e['scoreTrend']):
+        print(f'  {e["scoreTrend"]:+.1f} since {e["scoreTrendSince"]}  {e["title"]} ({e.get("project") or e["id"]})')
     unknown = sorted(set(scores) - ids)
     if unknown:
         print('  Threads for ids that aren\'t in the data:', ', '.join(unknown))
     report('\n'.join(f'- {e["userScore"]} ({e["userScoreCount"]}) **{e["title"]}** ({e.get("project") or e["id"]})'
+                     + (f', {e["scoreTrend"]:+.1f} since {e["scoreTrendSince"]}' if e.get('scoreTrend') is not None else '')
                      for e in rated) or 'No ratings yet.')
 
     new_text = dump(head, meta, entries)

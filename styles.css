@@ -1090,6 +1090,11 @@ dialog::backdrop { background: var(--backdrop); }
 
 /* Stars gained this week (tools/track_stars.py). */
 .gain { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; color: var(--ok); white-space: nowrap; }
+/* Rating trend: the score since the latest release against the one before it. */
+.trend { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.trend--up { color: var(--ok); }
+.trend--down { color: var(--error); }
+.trend--flat { color: var(--muted); }
 
 /* ── Releases page (releases/, built by tools/build_pages.py) ── */
 

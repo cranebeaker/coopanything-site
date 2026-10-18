@@ -276,6 +276,18 @@ def follow_form(e):
             '<p class="mail-form__status" role="status"></p></form>')
 
 
+def trend_tag(e):
+    """Whether people rate it better since its latest release (tools/track_ratings.py), as in app.js."""
+    t = e.get('scoreTrend')
+    if t is None:
+        return ''
+    since = esc(e.get('scoreTrendSince') or 'the latest release')
+    kind = 'up' if t > 0 else 'down' if t < 0 else 'flat'
+    sign = '▲ +' if t > 0 else '▼ −' if t < 0 else '= '
+    return (f' <span class="trend trend--{kind}" title="Average score since {since} compared with before it">'
+            f'{sign}{abs(t):.1f} since {since}</span>')
+
+
 def card(e, game, rows):
     multi = len(game['entries']) > 1
     t = TIERS[e['quality']]
@@ -329,7 +341,7 @@ def card(e, game, rows):
             if e.get('userScore') is not None:
                 n = e.get('userScoreCount') or 0
                 cells.append(fact('User score', f'<span class="mono">{e["userScore"]:.1f}</span> / 10'
-                                  + small(f'{n} {"rating" if n == 1 else "ratings"}')))
+                                  + small(f'{n} {"rating" if n == 1 else "ratings"}') + trend_tag(e)))
             else:
                 cells.append(fact('User score', f'<a href="#comments" data-rate="{esc(e["id"])}">Be the first to rate it</a>'
                                   if COMMENTS_ON else muted('No ratings yet')))

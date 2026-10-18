@@ -96,6 +96,8 @@ Each game page ends with **Ratings and comments**: one thread per project, where
 
 To rate a project, people start a comment with a score out of 10, like `Score: 8/10`; the 1 to 10 buttons above the comments copy that text for them. Each night `tools/track_ratings.py` averages each GitHub account's latest score per project into `userScore` and `userScoreCount`, which fill the **User score** column, its sort, the detail panel and the game pages. Replies and comments without a score don't count. To remove a score, hide the comment on GitHub.
 
+The same script works out each project's **rating trend** (`scoreTrend`, with the release in `scoreTrendSince`): the average score given since its latest release minus the average given before it, counting each account's latest score on each side. It shows as ▲ or ▼ under the user score once at least five people have rated on each side (`MIN_SIDE`), so a project that got low scores for an early build can show it's being rated better now.
+
 It's off until you set it up:
 
 1. On GitHub, open the repo's **Settings → General → Features** and tick **Discussions**.

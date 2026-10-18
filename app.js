@@ -63,6 +63,16 @@
   const COMMENTS_ON = !!document.querySelector('meta[name="rh-comments"]');
   const scoreText = (e) => e.userScore.toFixed(1);
   const ratingsText = (e) => `${e.userScoreCount} ${e.userScoreCount === 1 ? 'rating' : 'ratings'}`;
+  // Rating trend (tools/track_ratings.py): the average score since the latest release minus the
+  // one before it, there once five or more people have rated on each side. long adds "since vX".
+  const trendTag = (e, long) => {
+    if (e.scoreTrend == null) return '';
+    const t = e.scoreTrend;
+    const dir = t > 0 ? 'up' : t < 0 ? 'down' : 'flat';
+    const text = `${t > 0 ? '▲ +' : t < 0 ? '▼ −' : '= '}${Math.abs(t).toFixed(1)}`;
+    const since = esc(e.scoreTrendSince || 'the latest release');
+    return `<span class="trend trend--${dir}" title="Average score since ${since} compared with before it">${text}${long ? ` since ${since}` : ''}</span>`;
+  };
 
   // Email: the Sunday newsletter and per-project update alerts, run by a Cloudflare Worker
   // (newsletter/worker.js). The build puts its address in <meta name="rh-mail"> once it's set
@@ -446,7 +456,7 @@
           : '<span class="muted">No release</span>'}</td>
         <td class="small col-activity">${actTag(e)}</td>
         <td class="num col-score">${e.userScore != null
-          ? `<div class="stack"><span class="mono score">${scoreText(e)}</span><span class="small muted">${ratingsText(e)}</span></div>`
+          ? `<div class="stack"><span class="mono score">${scoreText(e)}</span><span class="small muted">${ratingsText(e)}</span>${trendTag(e)}</div>`
           : '<span class="muted">—</span>'}</td>
         <td class="num"><div class="stack"><span class="mono">${fmtStars(e.stars)}</span>${gainTag(e)}</div></td>
       </tr>`).join('');
@@ -676,7 +686,8 @@
         ${fact('Latest release', e.version || e.versionDate ? `<span class="mono">${esc(e.version || 'Release')}</span>${e.versionDate ? `<br><span class="small muted">${esc(fmtDate(e.versionDate))}</span>` : ''}` : '<span class="muted">No release yet</span>')}
         ${fact('Last activity', `${actTag(e)}${e.updated ? `<br><span class="small muted">${esc(fmtDate(e.updated))}</span>` : ''}`)}
         ${fact('User score', e.userScore != null
-          ? `<span class="mono">${scoreText(e)}</span> <span class="small muted">/ 10</span><br><span class="small muted">${ratingsText(e)}</span>`
+          ? `<span class="mono">${scoreText(e)}</span> <span class="small muted">/ 10</span><br><span class="small muted">${ratingsText(e)}</span>${
+            e.scoreTrend != null ? `<br>${trendTag(e, true)}` : ''}`
           : COMMENTS_ON ? `<a href="games/${slug}/#comments">Be the first to rate it</a>` : '')}
         ${fact('Project started', e.started ? esc(fmtDate(e.started)) : '')}
         ${fact('GitHub stars', e.stars != null ? `<span class="mono">${e.stars.toLocaleString('en')}</span>${

@@ -30,5 +30,8 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "startupandhold", "site": "github", "for": "Submitted 3 on 3 NHL Arcade"},
   {"name": "parabolee", "site": "github", "for": "Submitted Perfect Dark Zero Reinstated"},
   {"name": "BigDaddyJRich", "site": "github", "for": "Submitted WWE SmackDown! Here Comes the Pain"},
-  {"name": "vamidi", "site": "github", "for": "Submitted Tales of Legendia"}
+  {"name": "vamidi", "site": "github", "for": "Submitted Tales of Legendia"},
+  {"name": "Shagg88", "site": "github", "for": "Submitted Athelas: The Lord of the Rings: The Two Towers and The Return of the King"},
+  {"name": "Werewolf_Capable", "site": "reddit", "for": "Suggested the inFAMOUS recomps"},
+  {"name": "HeadShrinker1985", "site": "reddit", "for": "Suggested the rating trend: how a recomp's user score changes after a new release"}
 ];
