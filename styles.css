@@ -517,6 +517,9 @@ button, input, select { font: inherit; color: inherit; }
 .os-icon { width: 15px; height: 15px; fill: currentColor; flex: none; display: block; }
 .os-set { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); }
 .os-set--inline { gap: 6px; margin-left: 2px; color: var(--muted); }
+/* In the table, at most three logos to a row, so a project on all five systems doesn't
+   widen Runs on and push Stars past the edge. */
+.grid .os-set { display: inline-grid; grid-template-columns: repeat(3, 15px); gap: 6px; vertical-align: middle; }
 .os-set--inline .os-icon { width: 13px; height: 13px; }
 
 .os-chips { display: flex; flex-wrap: wrap; gap: 6px; }
