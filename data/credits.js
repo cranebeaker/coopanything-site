@@ -20,5 +20,6 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "JJBareaIsLeFather", "site": "reddit", "for": "Suggested the WWE and SmackDown vs. Raw ports"},
   {"name": "adeel001", "site": "reddit", "for": "Suggested Golden Sun and Dragon Ball Z: Budokai Tenkaichi 3"},
   {"name": "boomersky", "site": "reddit", "for": "Suggested adding Nintendo Switch projects"},
-  {"name": "mereshadows", "site": "reddit", "for": "Suggested a weekly newsletter of the latest recomps"}
+  {"name": "mereshadows", "site": "reddit", "for": "Suggested a weekly newsletter of the latest recomps"},
+  {"name": "tholurossleuth", "site": "reddit", "for": "Suggested showing only the systems a recomp runs on"}
 ];
