@@ -129,6 +129,37 @@
     });
   }
 
+  // Featured playthrough: a YouTube video picked for a project ("playthrough" in the data). It
+  // shows as a thumbnail; YouTube's player (its privacy-enhanced, no-cookie one) loads only when
+  // someone presses play. game.js does the same on game pages.
+  const youtubeId = (url) => (String(url || '').match(
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/) || [])[1];
+  const PLAY_ICON = '<svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6C12.8 47.7 34 47.7 34 47.7s21.2 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3Z" fill="#e00"/><path d="M45 24 27 14v20z" fill="#fff"/></svg>';
+  function videoHtml(e) {
+    const id = youtubeId(e.playthrough);
+    if (!id) return '';
+    return `<figure class="video">
+        <button type="button" class="video__play" data-youtube="${id}" aria-label="Play the featured playthrough of ${esc(e.project || e.title)}">
+          <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy">${PLAY_ICON}
+        </button>
+        <figcaption><a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Watch on YouTube ↗</a></figcaption>
+      </figure>`;
+  }
+  // Pressing play swaps the thumbnail for the player.
+  function playVideo(button) {
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${button.dataset.youtube}?autoplay=1&rel=0`;
+    frame.title = button.getAttribute('aria-label').replace(/^Play the /, 'The ');
+    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    button.replaceWith(frame);
+  }
+  document.addEventListener('click', (ev) => {
+    const button = ev.target.closest('button[data-youtube]');
+    if (button) playVideo(button);
+  });
+
   const correctionUrl = (e) => `${FEEDBACK_URL}&${new URLSearchParams({
     title: `[Feedback]: ${e.title}`,
     game: e.title,
@@ -654,6 +685,7 @@
         ${fact('Original developer', esc(e.developer || ''))}
       </dl>
       ${e.summary ? `<div class="d-section"><h3>About this recomp</h3><p>${esc(e.summary)}</p></div>` : ''}
+      ${youtubeId(e.playthrough) ? `<div class="d-section"><h3>Featured playthrough</h3>${videoHtml(e)}</div>` : ''}
       ${(e.features || []).length ? `<div class="d-section"><h3>Features</h3><div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div></div>` : ''}
       ${e.requires ? `<div class="d-section"><h3>What you need</h3><p class="d-note">${esc(e.requires)}</p></div>` : ''}
       ${e.ai ? '<div class="d-section"><p class="d-note">This project discloses that a substantial share of its code was written with AI tools.</p></div>' : ''}
@@ -696,7 +728,10 @@
     if (e) countVisit(e);
   });
 
-  dialog.addEventListener('close', () => setHash(''));
+  dialog.addEventListener('close', () => {
+    setHash('');
+    dialog.querySelectorAll('.video iframe').forEach((frame) => frame.remove());
+  });
   dialog.addEventListener('click', (ev) => {
     if (ev.target === dialog || ev.target.closest('[data-close]')) closeDetail();
   });

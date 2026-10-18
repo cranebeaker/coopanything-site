@@ -138,6 +138,20 @@
     });
   }
 
+  // Featured playthrough (playthrough_html() in tools/build_pages.py): the thumbnail turns into
+  // YouTube's no-cookie player when pressed, as in app.js.
+  document.addEventListener('click', (ev) => {
+    const button = ev.target.closest('button[data-youtube]');
+    if (!button) return;
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${button.dataset.youtube}?autoplay=1&rel=0`;
+    frame.title = button.getAttribute('aria-label').replace(/^Play the /, 'The ');
+    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    button.replaceWith(frame);
+  });
+
   // A cover that fails to load turns into the initials placeholder.
   document.addEventListener('error', (ev) => {
     const box = ev.target instanceof HTMLImageElement && ev.target.closest('.cover, .d-cover');

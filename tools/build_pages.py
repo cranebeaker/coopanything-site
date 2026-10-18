@@ -434,7 +434,7 @@ def page(game, share_url, snapshot):
       {cards}
   </div>
 
-{comments_html(game)}
+{playthrough_html(game)}{comments_html(game)}
   <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
     return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
                     image_alt=f'{name} on Recomp Haven: {pick["project"]}, {pick["quality"]} tier',
@@ -565,6 +565,44 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 </body>
 </html>
 '''
+
+
+# ── Featured playthrough ─────────────────────────────────
+
+YOUTUBE_RE = re.compile(r'(?:youtu\.be/|youtube(?:-nocookie)?\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/))([\w-]{11})')
+PLAY_ICON = ('<svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.2.3 34 .3 '
+             '34 .3s-21.2 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6C12.8 47.7 34 47.7 34 47.7s21.2 '
+             '0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3Z" fill="#e00"/><path d="M45 24 27 14v20z" fill="#fff"/></svg>')
+
+
+def youtube_id(url):
+    m = YOUTUBE_RE.search(url or '')
+    return m.group(1) if m else None
+
+
+def playthrough_html(game):
+    """A "Featured playthrough" section under the project cards for each project that has one: a
+    thumbnail that game.js turns into YouTube's no-cookie player only when pressed."""
+    picks = [(e, youtube_id(e.get('playthrough'))) for e in game['entries']]
+    picks = [(e, vid) for e, vid in picks if vid]
+    if not picks:
+        return ''
+    multi = len(game['entries']) > 1
+    figures = []
+    for e, vid in picks:
+        label = f' · {esc(e["project"])}' if multi else ''
+        figures.append(
+            f'<figure class="video">\n'
+            f'      <button type="button" class="video__play" data-youtube="{vid}" '
+            f'aria-label="Play the featured playthrough of {esc(e["project"])}">\n'
+            f'        <img src="https://i.ytimg.com/vi/{vid}/hqdefault.jpg" alt="" loading="lazy">{PLAY_ICON}\n'
+            f'      </button>\n'
+            f'      <figcaption><a href="https://www.youtube.com/watch?v={vid}" target="_blank" rel="noopener">'
+            f'Watch on YouTube ↗</a>{label}</figcaption>\n'
+            f'    </figure>')
+    return ('  <section class="gp-video" id="playthrough" aria-labelledby="playthrough-title">\n'
+            '    <h2 id="playthrough-title">Featured playthrough</h2>\n    '
+            + '\n    '.join(figures) + '\n  </section>\n')
 
 
 # ── Release feed ─────────────────────────────────────────
