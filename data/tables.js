@@ -104,6 +104,11 @@ window.RECOMPHAVEN_TABLES = {
    "label": "PC",
    "short": "PC",
    "color": "#4b5563"
+  },
+  "mac": {
+   "label": "Macintosh",
+   "short": "MAC",
+   "color": "#0f766e"
   }
  },
  "stages": {

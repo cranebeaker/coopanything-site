@@ -57,6 +57,7 @@ SYSTEMS = {
     'nds': ['Nintendo - Nintendo DS'],
     '3ds': ['Nintendo - Nintendo 3DS'],
     'switch': [],  # libretro has no Switch box art: Wikipedia only
+    'mac': [],     # nor classic Macintosh
     'gamecube': ['Nintendo - GameCube'],
     'wii': ['Nintendo - Wii'],
     'wiiu': ['Nintendo - Wii U'],
