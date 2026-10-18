@@ -684,7 +684,7 @@ def releases_page(entries, share_url, snapshot):
     return document(title='Latest releases', description=(
         'The newest releases of every game recompilation, decompilation and native port on Recomp Haven, '
         'newest first. Subscribe with RSS.'), path='releases/', share_url=share_url,
-        image_alt='Recomp Haven: Emulation is irrelevant.', body=body, snapshot=snapshot)
+        image_alt='Recomp Haven: The Sanctuary for Native Game Ports.', body=body, snapshot=snapshot)
 
 
 def feed(entries, limit=50):
@@ -881,7 +881,7 @@ def home_card(entries, games, out):
     im.paste(mark, (PAD - round(mark.width * 42 / 1615), 92), mark)
     f = font(MEDIUM, 32)
     y = 92 + 104 + 62
-    for ln in wrap('Emulation is irrelevant.', f, 540):
+    for ln in wrap('The Sanctuary for Native Game Ports.', f, 330):  # breaks after "for"
         d.text((PAD, y), ln, font=f, fill=INK['fg'], anchor='ls')
         y += 42
 
