@@ -25,6 +25,21 @@ window.RECOMPHAVEN_TABLES = {
    "short": "PS1",
    "color": "#56607a"
   },
+  "msx": {
+   "label": "MSX",
+   "short": "MSX",
+   "color": "#1d5aa8"
+  },
+  "msx2": {
+   "label": "MSX2",
+   "short": "MSX2",
+   "color": "#2f7bd6"
+  },
+  "nes": {
+   "label": "NES",
+   "short": "NES",
+   "color": "#b4282e"
+  },
   "snes": {
    "label": "Super Nintendo",
    "short": "SNES",
@@ -59,6 +74,11 @@ window.RECOMPHAVEN_TABLES = {
    "label": "PlayStation Portable",
    "short": "PSP",
    "color": "#7d5f10"
+  },
+  "32x": {
+   "label": "Sega 32X",
+   "short": "32X",
+   "color": "#3d3d8f"
   },
   "dreamcast": {
    "label": "Dreamcast / NAOMI",
@@ -95,6 +115,11 @@ window.RECOMPHAVEN_TABLES = {
    "short": "GBC",
    "color": "#5a4fcf"
   },
+  "vb": {
+   "label": "Virtual Boy",
+   "short": "VB",
+   "color": "#b5121b"
+  },
   "nds": {
    "label": "Nintendo DS",
    "short": "DS",
@@ -114,6 +139,16 @@ window.RECOMPHAVEN_TABLES = {
    "label": "Arcade",
    "short": "ARC",
    "color": "#7a5a20"
+  },
+  "ios": {
+   "label": "iOS",
+   "short": "iOS",
+   "color": "#555b66"
+  },
+  "j2me": {
+   "label": "Mobile phone (Java ME / BREW)",
+   "short": "Mobile",
+   "color": "#c46a1b"
   },
   "pc": {
    "label": "PC",

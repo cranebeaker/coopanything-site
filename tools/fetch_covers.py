@@ -53,6 +53,13 @@ WIKI_API = 'https://en.wikipedia.org/w/api.php'
 SYSTEMS = {
     'n64': ['Nintendo - Nintendo 64'],
     'snes': ['Nintendo - Super Nintendo Entertainment System'],
+    'nes': ['Nintendo - Nintendo Entertainment System'],
+    'msx': ['Microsoft - MSX', 'Microsoft - MSX2'],
+    'msx2': ['Microsoft - MSX2', 'Microsoft - MSX'],
+    'ios': [],  # no libretro set: Wikipedia only
+    'j2me': [],  # no libretro set: Wikipedia only
+    '32x': ['Sega - 32X'],
+    'vb': ['Nintendo - Virtual Boy'],
     'gba': ['Nintendo - Game Boy Advance'],
     'gb': ['Nintendo - Game Boy'],
     'gbc': ['Nintendo - Game Boy Color'],
