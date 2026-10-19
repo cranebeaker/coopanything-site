@@ -85,6 +85,11 @@ window.RECOMPHAVEN_TABLES = {
    "short": "GBA",
    "color": "#4b2f8f"
   },
+  "gb": {
+   "label": "Game Boy",
+   "short": "GB",
+   "color": "#8b956d"
+  },
   "gbc": {
    "label": "Game Boy Color",
    "short": "GBC",

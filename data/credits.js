@@ -34,5 +34,12 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "Shagg88", "site": "github", "for": "Submitted Athelas: The Lord of the Rings: The Two Towers and The Return of the King"},
   {"name": "Werewolf_Capable", "site": "reddit", "for": "Suggested the inFAMOUS recomps"},
   {"name": "HeadShrinker1985", "site": "reddit", "for": "Suggested the rating trend: how a recomp's user score changes after a new release"},
-  {"name": "bsimovic93", "site": "github", "for": "Submitted Need for Speed: High Stakes"}
+  {"name": "bsimovic93", "site": "github", "for": "Submitted Need for Speed: High Stakes"},
+  {"name": "KevinAlcantara", "site": "github", "for": "Submitted 2 Ship 2 Harkinian and reported that Lost Odyssey HD Remaster was cancelled"},
+  {"name": "Adeelshah001", "site": "github", "for": "Submitted Dragon Quest VIII, Dragon Quest IX, Digimon World 2 and White Knight Chronicles II"},
+  {"name": "sladeic", "site": "github", "for": "Submitted Demon's Souls"},
+  {"name": "vyanhursky", "site": "github", "for": "Submitted Def Jam: Fight for NY Recompiled"},
+  {"name": "GABRIELNNK", "site": "github", "for": "Submitted Bigodão, the Wario Land: Super Mario Land 3 recomp"},
+  {"name": "NoahVl", "site": "github", "for": "Submitted Birdman64, the Pilotwings 64 port"},
+  {"name": "moesuito", "site": "github", "for": "Submitted GT4Recomp, the Gran Turismo 4 recomp"}
 ];
