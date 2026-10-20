@@ -41,5 +41,6 @@ window.RECOMPHAVEN_CREDITS = [
   {"name": "vyanhursky", "site": "github", "for": "Submitted Def Jam: Fight for NY Recompiled"},
   {"name": "GABRIELNNK", "site": "github", "for": "Submitted Bigodão, the Wario Land: Super Mario Land 3 recomp"},
   {"name": "NoahVl", "site": "github", "for": "Submitted Birdman64, the Pilotwings 64 port"},
-  {"name": "moesuito", "site": "github", "for": "Submitted GT4Recomp, the Gran Turismo 4 recomp"}
+  {"name": "moesuito", "site": "github", "for": "Submitted GT4Recomp, the Gran Turismo 4 recomp"},
+  {"name": "sackchief", "site": "github", "for": "Corrected the Dragon Quest IX listing"}
 ];
