@@ -163,6 +163,7 @@
     'Save changes': 'Сохранить', "Change anything below. Empty fields show what's listed now. Nothing is saved until you press Save.": 'Измените что угодно ниже. Пустые поля показывают то, что указано сейчас. Ничего не сохранится, пока вы не нажмёте «Сохранить».',
     'Your description shows here as you type.': 'Здесь появится ваше описание, пока вы пишете.', 'Short news': 'Короткая новость', 'Download page': 'Страница загрузки',
     'Latest version': 'Последняя версия', 'Saved. It’s live now.': 'Сохранено. Уже на сайте.', 'Nothing changed yet.': 'Пока ничего не изменилось.',
+    '. The site is open source:': '. Сайт с открытым кодом:', 'contribute on GitHub': 'помогите на GitHub', 'Contribute on GitHub': 'Помочь на GitHub',
     'Recommended': 'Рекомендуем', 'Which one should I play? →': 'Какой выбрать? →', 'Best bet so far': 'Лучший вариант пока', 'Every project, side by side': 'Все проекты рядом',
     'Rate it and vote on its co-op %': 'Оцените мод и проголосуйте за его кооп %',
     'Ratings and comments': 'Оценки и комментарии', 'Submit it': 'Добавьте его', 'Breadcrumb': 'Навигация',
