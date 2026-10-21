@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Re:Haven - The Sanctuary for Native Game Ports.</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="The Sanctuary for Native Game Ports. Every game recompilation, released and in progress. Sort and filter by console, genre, quality and more.">
-<link rel="canonical" href="https://recomphaven.com/">
-<!-- Link previews. tools/build_pages.py makes the image and adds a version to its URL. -->
+<title>CoOp:Anything: a list of all co-op mods</title>
+<meta name="description" content="Every co-op mod for single-player games, playable and in progress. Search any game, see how much of it you can play with friends, and rate the mods you've tried.">
+<link rel="canonical" href="https://SITE_URL/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"CoOp:Anything","alternateName":"Co-op Anything","url":"https://SITE_URL/","description":"Every co-op mod for single-player games: search any game and see how much of it you can play with friends."}</script>
+<!-- Link previews. tools/build_pages.py makes the image, fills in the site address and adds a version to the image URL. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Recomp Haven">
-<meta property="og:title" content="Re:Haven - The Sanctuary for Native Game Ports.">
-<meta property="og:description" content="The Sanctuary for Native Game Ports. Every game recompilation, released and in progress. Sort and filter by console, genre, quality and more.">
-<meta property="og:url" content="https://recomphaven.com/">
-<meta property="og:image" content="https://recomphaven.com/assets/share/home.jpg">
+<meta property="og:site_name" content="CoOp:Anything">
+<meta property="og:title" content="CoOp:Anything: a list of all co-op mods">
+<meta property="og:description" content="Search any game and see how much of it you can play with friends: every co-op mod, its stage, quality and community rating.">
+<meta property="og:url" content="https://SITE_URL/">
+<meta property="og:image" content="https://SITE_URL/assets/share/home.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Recomp Haven: The Sanctuary for Native Game Ports.">
+<meta property="og:image:alt" content="CoOp:Anything: a list of all co-op mods">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="alternate" type="application/rss+xml" title="Recomp Haven: latest releases" href="https://recomphaven.com/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="CoOp:Anything: latest releases" href="https://SITE_URL/feed.xml">
 <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
@@ -29,27 +29,23 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<a class="skip" href="#results">Skip to the list</a>
+<a class="skip" href="#q">Skip to search</a>
 
 <header class="masthead">
   <div class="wrap masthead__top">
     <div class="brand">
-      <h1 class="wordmark"><img src="assets/logo.png" alt="Re:Haven" width="1615" height="338"></h1>
-      <p class="tagline">The Sanctuary for Native Game Ports.</p>
-      <p class="asm" aria-hidden="true">MIPS · PowerPC · 65816 · SH-4 · x86 <span>→</span> native C</p>
+      <h1 class="wordmark"><img src="assets/logo.png" alt="CoOp:Anything" width="2074" height="370"></h1>
+      <p class="tagline">a list of all co-op mods</p>
     </div>
     <div class="masthead__actions">
-      <a id="newsletter-btn" class="submit-btn feedback-btn mail-btn" href="#newsletter" aria-label="Newsletter" title="Get the week's new and updated recomps by email every Sunday" hidden>
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-        <span>Newsletter</span>
+      <a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
+      <a class="submit-btn feedback-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.49 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.7 19.7 0 0 0-4.88 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42Z"/></svg>
+        <span>Join Discord</span>
       </a>
-      <a class="submit-btn feedback-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-        <span>Send feedback</span>
-      </a>
-      <a class="submit-btn" href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener" aria-label="Submit a game" title="Suggest a missing recomp, decomp or port (opens a form on GitHub)">
+      <a class="submit-btn" href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        <span>Submit a game</span>
+        <span>Submit a mod</span>
       </a>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
         <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
@@ -60,60 +56,40 @@
   <div class="wrap">
     <div id="stage-tiles" class="stage-tiles" role="group" aria-label="Filter by stage"></div>
   </div>
+  <!-- feed.xml and releases/ are made by tools/build_pages.py, so they only exist on the built site. -->
+  <div class="wrap pulse" aria-label="Latest releases">
+    <div class="pulse__strip">
+      <h2 class="pulse__label">Latest releases</h2>
+      <ol id="latest-list" class="pulse__list"></ol>
+      <a class="pulse__link" href="releases/">All releases →</a>
+    </div>
+  </div>
 </header>
 
 <main>
-  <!-- feed.xml and releases/ are made by tools/build_pages.py, so they only exist on the built site. -->
-  <section class="wrap pulse" aria-label="What's new">
-    <div class="pulse__panel">
-      <div class="pulse__head">
-        <h2>Latest releases</h2>
-        <a class="pulse__link" href="feed.xml" title="Subscribe to new releases with RSS">
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="5" cy="19" r="2.2" fill="currentColor"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>RSS</a>
-        <a class="pulse__link" href="releases/">All releases →</a>
-      </div>
-      <ol id="latest-list" class="pulse__list"></ol>
-    </div>
-    <div class="pulse__panel">
-      <div class="pulse__head">
-        <h2 title="The projects people opened most on Recomp Haven over the last 3 days, recounted every night">Trending releases</h2>
-        <button type="button" class="pulse__link" data-sort-trending>Sort by trending →</button>
-      </div>
-      <ol id="trending-list" class="pulse__list"></ol>
-    </div>
-  </section>
-
   <section class="controls" aria-label="Search, filter and sort">
     <div class="wrap controls__inner">
-      <div class="controls__row">
-        <div class="search">
-          <label for="q" class="sr-only">Search</label>
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input id="q" type="search" placeholder="Search games, teams, toolchains" autocomplete="off" spellcheck="false">
-        </div>
-        <label class="field"><span>Console</span><select id="f-console"></select></label>
-        <label class="field"><span>Genre</span><select id="f-genre"></select></label>
-        <label class="field"><span>Quality</span><select id="f-quality"></select></label>
-        <label class="field"><span>Toolchain</span><select id="f-toolchain"></select></label>
-        <label class="toggle toggle--field" for="hide-ai" title="Hide projects that disclose a substantial share of AI-written code">
-          <input id="hide-ai" type="checkbox">
-          <span class="toggle__track" aria-hidden="true"></span>
-          Hide AI-assisted
-        </label>
+      <div class="search search--hero">
+        <label for="q" class="sr-only">Search for a game</label>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Can I play it with friends? Search any game: Skyrim, Deus Ex, Zelda..." autocomplete="off" spellcheck="false">
+        <kbd class="search__key" aria-hidden="true">/</kbd>
       </div>
-      <div class="controls__row controls__row--chips">
-        <div class="chip-groups">
-          <div class="os-group">
-            <span id="os-label" class="chips__label">Runs on</span>
-            <div id="os-filter" class="os-filter" role="group" aria-labelledby="os-label"></div>
-          </div>
-          <div id="feature-chips" class="chips" role="group" aria-label="Must have"></div>
-        </div>
+      <div class="controls__row">
+        <label class="field"><span>Kind</span><select id="f-console"></select></label>
+        <label class="field"><span>Engine</span><select id="f-genre"></select></label>
+        <label class="field"><span>Quality</span><select id="f-quality"></select></label>
+        <label class="field"><span>How you connect</span><select id="f-toolchain"></select></label>
+        <button id="ca-toggle" class="spotlight spotlight--field" type="button" aria-pressed="false" title="Show only the mods made with Co-op Anything, the open playbook for making any single-player game co-op with an AI agent">
+          <span class="spotlight__mark" aria-hidden="true">Co:</span>
+          <span class="spotlight__text"><strong>Made with Co-op Anything</strong><span id="ca-count"></span></span>
+          <span class="spotlight__switch" aria-hidden="true"></span>
+        </button>
       </div>
     </div>
   </section>
 
-  <section id="results" class="wrap results" tabindex="-1" aria-label="Recomps">
+  <section id="results" class="wrap results" tabindex="-1" aria-label="Co-op mods">
     <div class="results__bar">
       <p id="count" class="count" aria-live="polite"></p>
       <div class="results__actions">
@@ -137,14 +113,14 @@
         <thead>
           <tr>
             <th scope="col" data-sort="title"><button type="button">Game</button></th>
-            <th scope="col" data-sort="console"><button type="button">Console</button></th>
-            <th scope="col" class="col-os"><span class="th-label">Runs on</span></th>
-            <th scope="col" data-sort="genre" class="col-genre"><button type="button">Genre</button></th>
+            <th scope="col" data-sort="console"><button type="button">Kind</button></th>
+            <th scope="col" data-sort="coop" class="col-coop"><button type="button" title="How much of the game you can play together: an estimate from what's synced, replaced by players' votes once 3 or more have voted">Co-op %</button></th>
+            <th scope="col" data-sort="genre" class="col-genre"><button type="button">Engine</button></th>
             <th scope="col" data-sort="stage"><button type="button">Stage</button></th>
             <th scope="col" data-sort="quality"><button type="button">Quality</button></th>
             <th scope="col" data-sort="release" class="col-release"><button type="button">Latest release</button></th>
             <th scope="col" data-sort="updated" class="col-activity"><button type="button">Last activity</button></th>
-            <th scope="col" data-sort="score" class="num col-score"><button type="button" title="Average of visitors' ratings out of 10, from the comments on each game's page">User score</button></th>
+            <th scope="col" data-sort="score" class="num col-score"><button type="button" title="Players' average rating out of 10. Open a mod to rate it.">Rating</button></th>
             <th scope="col" data-sort="stars" class="num"><button type="button">Stars</button></th>
           </tr>
         </thead>
@@ -155,8 +131,8 @@
     <div id="card-view" class="cards" hidden></div>
 
     <div id="empty" class="empty" hidden>
-      <p class="empty__title">No recomps match these filters.</p>
-      <p>Try a different search, or clear the filters to see all of them. If a recomp is missing, <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">submit it</a>.</p>
+      <p class="empty__title">No co-op mods match.</p>
+      <p>Nobody may have made this game co-op yet. Clear the filters, or <a href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener">tell us about a mod we're missing</a>. Want to build it yourself? <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener">Co-op Anything</a> walks your AI agent through it.</p>
       <button id="empty-reset" class="btn" type="button">Clear filters</button>
     </div>
   </section>
@@ -166,12 +142,12 @@
       <div>
         <h2 id="legend-tiers">Quality tiers</h2>
         <div id="tier-list" class="tier-list"></div>
-        <p class="fine">Ratings start from each project's own status and release history, then get adjusted by hand for the flagship releases. They're a guide, not a review.</p>
+        <p class="fine">Tiers start from each project's status, what it's confirmed to sync and how it was tested. S is picked by hand. They're a guide: rate the mods you've played to help the next person.</p>
       </div>
       <div class="legend__text">
-        <h2>What counts as a recomp</h2>
-        <p>A static recompilation translates a game's original machine code (MIPS on the N64 and PlayStation, PowerPC on the Xbox 360 and GameCube) into C or C++ ahead of time, then compiles it into a native program. No emulator runs while you play, which is how these ports add widescreen, high frame rates and mod support.</p>
-        <p>Decompilations and disassemblies, where people rebuild a game's source code by hand, are listed too, along with the native ports compiled from them, with Decompilation or Disassembly as their toolchain. Emulators and compatibility layers, which run a game's original code without translating or rebuilding it, aren't listed. The one exception is P.T., a hand-made reimplementation of the PS4 teaser, labelled Reimplementation.</p>
+        <h2>Co-op %</h2>
+        <p>How much of the game you can play together. It starts as an estimate from the project's status and from what's confirmed to sync between players: the story, enemies, the world, items and seeing each other. Once three or more players have voted on a mod, their average replaces the estimate.</p>
+        <p>Played one? Open it, say how much of the game worked in co-op, rate it and say how your session went. No account needed, and one vote per mod per person (you can change yours).</p>
         <h2>Stages</h2>
         <dl id="stage-list" class="stage-list"></dl>
         <h2>Activity</h2>
@@ -184,49 +160,24 @@
     </div>
   </section>
 
-  <!-- Shown once the build sets MAIL_API in tools/build_pages.py (newsletter/README.md). -->
-  <section id="newsletter" class="wrap newsletter" aria-labelledby="newsletter-title" hidden>
-    <div class="newsletter__inner">
-      <div class="newsletter__text">
-        <h2 id="newsletter-title">The Sunday newsletter</h2>
-        <p>One email every Sunday with the recomps that were released or updated that week, and the new ones on the list. To hear about one project the moment it updates, use <strong>Get update emails</strong> on its page.</p>
-      </div>
-      <form class="mail-form" data-mail-form>
-        <div class="mail-form__row">
-          <input id="nl-email" type="email" name="email" required autocomplete="email" placeholder="you@example.com" aria-label="Your email address">
-          <button class="btn" type="submit">Subscribe</button>
-        </div>
-        <input class="mail-form__hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <p class="mail-form__status" role="status"></p>
-        <p class="mail-form__fine">You'll get an email to confirm first. Every email has a one-click unsubscribe, and your address is only used for these emails.</p>
-      </form>
-    </div>
-  </section>
-
-  <!-- People come from data/credits.js. -->
-  <section class="wrap thanks" aria-labelledby="thanks-title">
-    <div class="thanks__inner">
-      <h2 id="thanks-title">Thanks</h2>
-      <p class="thanks__intro">These people made Recomp Haven better: they submitted games that are now on the list, or sent feedback that changed the site. <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit a game</a> or <a href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener">send feedback</a> to join them.</p>
-      <ul id="thanks-list" class="thanks__list"></ul>
-    </div>
-  </section>
 </main>
 
 <footer class="wrap footer">
-  <p>Missing a recomp? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml" target="_blank" rel="noopener">Submit it on GitHub</a>. Spotted a mistake in a summary or tier, or have an idea for the site? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml" target="_blank" rel="noopener">Send feedback</a>. Something broken? <a href="https://github.com/rikuwru/recomphaven/issues/new?template=bug-report.yml" target="_blank" rel="noopener">Report a bug</a>.</p>
-  <p>Recomp Haven is open source: <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">source code on GitHub</a>, under the MIT License. It's built with AI help; <a href="https://github.com/rikuwru/recomphaven#made-with-ai-help" target="_blank" rel="noopener">how and why</a>.</p>
-  <p>Every recomp on this list needs your own legally obtained copy of the game. Recomp Haven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time id="snapshot"></time>. Base data from <a href="https://github.com/nio03/unricopie">Recompendium</a> (MIT License, © 2026 Recompendium contributors), with repository stats from GitHub. More projects were found through <a href="https://recomp.fyi/">recomp.fyi</a> and the <a href="https://quiverlauncher.com/">Quiver Launcher</a> catalog, then checked against each project's own repository. Genres, stages and quality tiers are Recomp Haven's own. Box art comes from the <a href="https://github.com/libretro-thumbnails/libretro-thumbnails">libretro thumbnails</a> project and Wikipedia, and belongs to each game's publisher. Operating system support comes from each project's GitHub releases and README; logos from <a href="https://simpleicons.org/">Simple Icons</a>.</p>
+  <p>Missing a co-op mod? <a href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener">Submit it on GitHub</a>. Spotted a mistake, or have an idea for the site? <a href="https://github.com/cranebeaker/coop-anything/issues/new?title=%5BCoOp%3AAnything%5D%20" target="_blank" rel="noopener">Send feedback</a>. Chat with modders on the <a href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener">Co-op Anything Discord</a>.</p>
+  <p>The list comes from the <a href="https://github.com/cranebeaker/coop-anything/blob/main/DIRECTORY.md" target="_blank" rel="noopener">Co-op Anything directory</a>, where every entry links its sources; repository stats come from GitHub. Want a game made co-op? <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener">Co-op Anything</a> shows your AI agent how to build or revive a co-op mod.</p>
+  <p>CoOp:Anything is built on <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">Recomp Haven</a> by rikuwru (MIT License), and like it, with AI help. Every mod listed needs your own copy of the game; CoOp:Anything links to projects and hosts no game files. Box art belongs to each game's publisher.</p>
+  <p>Data snapshot <time id="snapshot"></time>.</p>
 </footer>
 
 <dialog id="detail" aria-labelledby="d-title">
   <div class="d-body" id="d-body"></div>
 </dialog>
 
+<script src="i18n.js"></script>
 <script src="data/tables.js"></script>
 <script src="data/recomps.js"></script>
-<script src="data/credits.js"></script>
+<script src="md.js"></script>
 <script src="app.js"></script>
+<script src="account.js"></script>
 </body>
 </html>

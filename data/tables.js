@@ -1,222 +1,112 @@
 /*
  * Labels, colours and icons shared by the site (app.js) and the game-page builder
  * (tools/build_pages.py). Plain JSON after the assignment, so Python can read it.
- * Key order matters: it's the order stages, tiers and systems are listed in.
+ * Key order matters: it's the order stages, tiers and kinds are listed in.
+ * "consoles" holds the project kinds (the site was a fork of Recomp Haven, which listed consoles).
  */
 window.RECOMPHAVEN_TABLES = {
  "consoles": {
-  "n64": {
-   "label": "Nintendo 64",
-   "short": "N64",
+  "mod": {
+   "label": "Mod",
+   "short": "MOD",
+   "color": "#5b6cff"
+  },
+  "fork": {
+   "label": "Fork or port",
+   "short": "FORK",
+   "color": "#1f8a70"
+  },
+  "decomp-port": {
+   "label": "Decomp port",
+   "short": "DECOMP",
    "color": "#b3242a"
   },
-  "x360": {
-   "label": "Xbox 360",
-   "short": "360",
-   "color": "#107c10"
+  "official": {
+   "label": "Official mode",
+   "short": "OFFICIAL",
+   "color": "#b07d10"
   },
-  "xboxone": {
-   "label": "Xbox One",
-   "short": "XB1",
-   "color": "#0b5d3b"
-  },
-  "ps1": {
-   "label": "PlayStation",
-   "short": "PS1",
-   "color": "#56607a"
-  },
-  "msx": {
-   "label": "MSX",
-   "short": "MSX",
-   "color": "#1d5aa8"
-  },
-  "msx2": {
-   "label": "MSX2",
-   "short": "MSX2",
-   "color": "#2f7bd6"
-  },
-  "nes": {
-   "label": "NES",
-   "short": "NES",
-   "color": "#b4282e"
-  },
-  "snes": {
-   "label": "Super Nintendo",
-   "short": "SNES",
+  "framework": {
+   "label": "Framework or tool",
+   "short": "TOOL",
    "color": "#6a4fb0"
   },
-  "xbox": {
-   "label": "Xbox",
-   "short": "XBOX",
-   "color": "#3e6a1d"
+  "emulator-netplay": {
+   "label": "Emulator netplay",
+   "short": "NETPLAY",
+   "color": "#2f7bd6"
   },
-  "megadrive": {
-   "label": "Mega Drive / Genesis",
-   "short": "MD",
-   "color": "#ad2460"
-  },
-  "ps2": {
-   "label": "PlayStation 2",
-   "short": "PS2",
-   "color": "#1f48a8"
-  },
-  "ps3": {
-   "label": "PlayStation 3",
-   "short": "PS3",
-   "color": "#2b2f3a"
-  },
-  "ps4": {
-   "label": "PlayStation 4",
-   "short": "PS4",
-   "color": "#003a8c"
-  },
-  "psp": {
-   "label": "PlayStation Portable",
-   "short": "PSP",
-   "color": "#7d5f10"
-  },
-  "32x": {
-   "label": "Sega 32X",
-   "short": "32X",
-   "color": "#3d3d8f"
-  },
-  "dreamcast": {
-   "label": "Dreamcast / NAOMI",
-   "short": "DC",
-   "color": "#b04a12"
-  },
-  "gamecube": {
-   "label": "GameCube",
-   "short": "GC",
-   "color": "#5a4a9c"
-  },
-  "wii": {
-   "label": "Wii",
-   "short": "WII",
-   "color": "#2a72a6"
-  },
-  "wiiu": {
-   "label": "Wii U",
-   "short": "WIIU",
-   "color": "#00738f"
-  },
-  "gba": {
-   "label": "Game Boy Advance",
-   "short": "GBA",
-   "color": "#4b2f8f"
-  },
-  "gb": {
-   "label": "Game Boy",
-   "short": "GB",
-   "color": "#8b956d"
-  },
-  "gbc": {
-   "label": "Game Boy Color",
-   "short": "GBC",
-   "color": "#5a4fcf"
-  },
-  "vb": {
-   "label": "Virtual Boy",
-   "short": "VB",
-   "color": "#b5121b"
-  },
-  "nds": {
-   "label": "Nintendo DS",
-   "short": "DS",
-   "color": "#8f2f74"
-  },
-  "3ds": {
-   "label": "Nintendo 3DS",
-   "short": "3DS",
-   "color": "#a32a4e"
-  },
-  "switch": {
-   "label": "Nintendo Switch",
-   "short": "NSW",
-   "color": "#e60012"
-  },
-  "arcade": {
-   "label": "Arcade",
-   "short": "ARC",
-   "color": "#7a5a20"
-  },
-  "ios": {
-   "label": "iOS",
-   "short": "iOS",
-   "color": "#555b66"
-  },
-  "j2me": {
-   "label": "Mobile phone (Java ME / BREW)",
-   "short": "Mobile",
-   "color": "#c46a1b"
-  },
-  "pc": {
-   "label": "PC",
-   "short": "PC",
-   "color": "#4b5563"
-  },
-  "mac": {
-   "label": "Macintosh",
-   "short": "MAC",
-   "color": "#0f766e"
+  "gap": {
+   "label": "Wanted",
+   "short": "WANTED",
+   "color": "#5d6375"
   }
  },
  "stages": {
   "released": {
-   "label": "Released",
-   "blurb": "Stable, finished releases",
-   "long": "A stable release you can play through. Tagged 1.0 or marked complete by its team."
+   "label": "Playable",
+   "blurb": "Play it with friends today",
+   "long": "You can play it together now: a working co-op mod, or an official co-op mode."
   },
   "beta": {
-   "label": "Playable beta",
-   "blurb": "Playable, still in progress",
-   "long": "Public builds you can play, with known gaps the team is still working on."
+   "label": "Partial",
+   "blurb": "Plays, with gaps in the sync",
+   "long": "Public builds you can play together, but some of the game (story, enemies, saves or the world) doesn't sync yet."
   },
   "development": {
    "label": "In development",
-   "blurb": "Boots or partly works",
-   "long": "Work in progress. It may boot, reach menus or run parts of the game."
+   "blurb": "Alpha or prototype",
+   "long": "Work in progress: an alpha, a prototype or a research build. Players may see each other, but expect a lot to be missing."
   },
   "abandoned": {
    "label": "Abandoned",
-   "blurb": "No longer maintained",
-   "long": "The team has stopped work or archived the project."
+   "blurb": "Stopped, up for revival",
+   "long": "Its author stopped. Many of these got far and are worth reviving: Co-op Anything has a guide for that."
+  },
+  "wanted": {
+   "label": "Wanted",
+   "blurb": "No co-op mod yet",
+   "long": "Nobody has made this game co-op yet, as far as anyone has found. Up for grabs."
   }
  },
  "tiers": {
   "S": {
    "label": "Definitive",
-   "text": "Complete and polished, with enhancements past the original: widescreen, high frame rates, mods. The way to play it now."
+   "text": "The whole game, together, polished. The way to play it with friends now."
   },
   "A": {
    "label": "Complete",
-   "text": "Playable start to finish in a stable release. Minor issues at most."
+   "text": "Play the story start to finish together, or a stable official co-op mode."
   },
   "B": {
    "label": "Playable",
-   "text": "Playable builds with known bugs, missing features or a rough setup."
+   "text": "You can play together, with known gaps in what syncs or a rough setup."
   },
   "C": {
    "label": "Rough",
-   "text": "Boots and partly plays in tagged pre-release builds. Expect crashes and gaps."
+   "text": "Alpha builds, or partial sync without the story. Expect desyncs and crashes."
   },
   "D": {
    "label": "Experimental",
-   "text": "Early research, no public build, or not playable yet."
+   "text": "Prototype, research build, or abandoned before it got far."
+  },
+  "X": {
+   "label": "None yet",
+   "text": "No co-op project found for this game. Want to be the first?"
   }
  },
  "features": {
-  "widescreen": "Widescreen",
-  "high-fps": "High frame rate",
-  "mods": "Mod support",
-  "ray-tracing": "Ray tracing",
-  "multiplayer": "Multiplayer",
-  "online": "Online play",
-  "launcher": "Launcher",
-  "steam-deck": "Steam Deck",
-  "keyboard-mouse": "Keyboard & mouse",
-  "keyboard": "Keyboard",
-  "mod-manager": "Mod manager"
+  "coop-anything": "Made with Co-op Anything",
+  "story": "Story co-op",
+  "story-partial": "Partial story sync",
+  "enemies": "Synced enemies",
+  "world": "Shared world",
+  "shared-items": "Shared items",
+  "easy-join": "Easy join, no port forwarding",
+  "open-source": "Open source",
+  "auto-tested": "Automated tests",
+  "player-reports": "Player reports",
+  "adopt": "Up for adoption"
  },
  "os": {
   "windows": {

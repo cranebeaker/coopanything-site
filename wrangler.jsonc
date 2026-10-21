@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The Worker's name is the first part of its address: <name>.<your account subdomain>.workers.dev
+  "name": "mods",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  // The site's own domain (Cloudflare zone on this account). workers.dev and www redirect to it (worker/index.js).
+  "routes": [
+    { "pattern": "coopanything.app", "custom_domain": true },
+    { "pattern": "www.coopanything.app", "custom_domain": true }
+  ],
+  "preview_urls": false,
+  "assets": {
+    // tools/build_pages.py writes the site here; `npm run deploy` builds it first.
+    "directory": "./_site",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/auth/*", "/", "/games/*"],
+    "html_handling": "auto-trailing-slash"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "coop-haven",
+      // `npm run setup` creates the database and fills this in.
+      "database_id": "e50788e2-bb9c-49fd-ac63-8e14d702bf9c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true },
+  // Log in with Discord (worker/auth.js). The secret DISCORD_CLIENT_SECRET is set with `npx wrangler secret put`.
+  "vars": {
+    "DISCORD_CLIENT_ID": "1562132083474829394",
+    "GUILD_ID": "1561411702082510879",
+    "OWNER_ID": "285165543693221889"
+  }
+}

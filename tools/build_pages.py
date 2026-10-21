@@ -1,4 +1,4 @@
-"""Builds the deployable site into _site/.
+"""Builds the deployable site into _site/ (served by the Worker in worker/index.js).
 
 It copies the static files, then generates:
 
@@ -46,24 +46,26 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from refresh_stats import DATA, ROOT, load  # noqa: E402
 
-SITE = 'https://recomphaven.com'
-# giscus (https://giscus.app): ratings and comments on game pages, kept as GitHub Discussions in
-# this repo, one thread per project. Off until category_id is filled in (README: "Ratings and
-# comments"); tools/track_ratings.py averages the scores people post there.
-GISCUS = {'repo': 'rikuwru/recomphaven', 'repo_id': 'R_kgDOVMUa9g',
-          'category': 'Ratings and comments', 'category_id': 'DIC_kwDOVMUa9s4DIxXc'}
+# The site's public address, used in link previews, the feed and the sitemap. COOP_SITE overrides
+# it (for example after moving from workers.dev to your own domain).
+SITE = (os.environ.get('COOP_SITE') or 'https://coopanything.app').rstrip('/')
+SITE_HOST = SITE.split('://', 1)[-1]
+# giscus (https://giscus.app): optional GitHub Discussions threads on game pages. Off while
+# category_id is empty; ratings come from the Worker's votes instead (worker/index.js).
+GISCUS = {'repo': '', 'repo_id': '', 'category': 'Ratings and comments', 'category_id': ''}
 COMMENTS_ON = bool(GISCUS['repo_id'] and GISCUS['category_id'])
 # GoatCounter site code (the "recomphaven" in recomphaven.goatcounter.com), or '' for no
 # visit counting. It counts the visits that rank Trending; see tools/track_visits.py.
-GOATCOUNTER = 'recomphaven'
+GOATCOUNTER = ''
 # The newsletter Worker's address (newsletter/README.md), or '' to leave the sign-up forms out.
 # RH_MAIL_API overrides it, for trying the forms against a test Worker.
-MAIL_API = os.environ.get('RH_MAIL_API') or 'https://recomphaven-mail.intooblivion-riku.workers.dev'
-SUBMIT_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=submit-a-game.yml'
-FEEDBACK_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=feedback.yml'
-BUG_URL = 'https://github.com/rikuwru/recomphaven/issues/new?template=bug-report.yml'
-REPO_URL = 'https://github.com/rikuwru/recomphaven'
-STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'assets', 'data']
+MAIL_API = os.environ.get('RH_MAIL_API') or ''
+SUBMIT_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml'
+FEEDBACK_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?labels=correction'
+BUG_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?title=%5BCoOp%3AAnything%20bug%5D%20'
+REPO_URL = 'https://github.com/cranebeaker/coop-anything'
+QUICKSTART_URL = 'https://github.com/cranebeaker/coop-anything#quick-start'
+STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'i18n.js', 'md.js', 'account.js', 'editor.js', 'my.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
 with open(os.path.join(ROOT, 'data', 'tables.js'), encoding='utf-8') as _f:
@@ -75,20 +77,24 @@ STAGE_ORDER, TIER_ORDER = list(STAGES), list(TIERS)
 
 # What the "Recommended" reason says a project has.
 FEATURE_PHRASES = {
-    'widescreen': 'widescreen', 'high-fps': 'high frame rates', 'mods': 'mod support',
-    'mod-manager': 'a mod manager', 'ray-tracing': 'ray tracing', 'multiplayer': 'multiplayer',
-    'online': 'online play', 'keyboard-mouse': 'keyboard and mouse controls', 'keyboard': 'keyboard controls',
-    'steam-deck': 'Steam Deck support',
+    'story': 'story co-op', 'story-partial': 'partial story sync', 'enemies': 'synced enemies',
+    'world': 'a shared world', 'shared-items': 'shared items', 'easy-join': 'easy joining with no port forwarding',
+    'open-source': 'open source code', 'auto-tested': 'automated tests',
 }
+SCOPE = [('players_visible', 'See each other'), ('story', 'Story'), ('enemies', 'Enemies'),
+         ('world_state', 'World'), ('items', 'Items')]
+SCOPE_WORD = {'yes': 'Synced', 'shared': 'Shared', 'per-player': 'Per player', 'partial': 'Partly',
+              'no': 'Not synced', 'unknown': 'Unknown'}
 PLAYABLE = {'S', 'A', 'B'}
 
 # Share-card colours: the site's dark theme (styles.css).
 INK = {
     'bg': (14, 16, 23), 'scan': (19, 21, 29), 'surface': (22, 25, 36), 'fg': (232, 234, 242),
-    'muted': (151, 157, 179), 'accent': (143, 154, 255), 'tier-ink': (26, 26, 26),
+    'muted': (151, 157, 179), 'accent': (79, 209, 181), 'tier-ink': (26, 26, 26),
 }
-TIER_COLORS = {'S': '#ff7f7f', 'A': '#ffbf7f', 'B': '#ffdf7f', 'C': '#ffff7f', 'D': '#bfff7f'}
-STAGE_COLORS = {'released': '#4cc47f', 'beta': '#3fc7c1', 'development': '#e3a63c', 'abandoned': '#7d8398'}
+TIER_COLORS = {'S': '#ff7f7f', 'A': '#ffbf7f', 'B': '#ffdf7f', 'C': '#ffff7f', 'D': '#bfff7f', 'X': '#c9cdd8'}
+STAGE_COLORS = {'released': '#4cc47f', 'beta': '#3fc7c1', 'development': '#e3a63c', 'abandoned': '#7d8398',
+                'wanted': '#e08bd6'}
 
 TODAY = dt.datetime.now(dt.timezone.utc).date()
 esc = html.escape
@@ -161,20 +167,18 @@ def reason(game):
                  f"{stage}, against {STAGES[other['stage']]['label'].lower()}.")
     elif (pick.get('stars') or 0) > (other.get('stars') or 0):
         first = (f"Level with {other['project']} on rating and stage, with the bigger following on GitHub "
-                 f"({fmt_stars(pick.get('stars'))} stars to {fmt_stars(other.get('stars'))}).")
+                 + (f"({fmt_stars(pick.get('stars'))} stars to {fmt_stars(other.get('stars'))})."
+                    if other.get('stars') is not None else f"({fmt_stars(pick.get('stars'))} stars).")
+                 )
     else:
         first = f"Level with {other['project']} on rating and stage."
 
     feats = [FEATURE_PHRASES[f] for f in pick.get('features') or [] if f in FEATURE_PHRASES]
     if 'keyboard and mouse controls' in feats and 'keyboard controls' in feats:
         feats.remove('keyboard controls')
-    systems = [OS[k]['label'] for k in pick.get('platforms') or []]
-    second = f'It has {and_list(feats[:4])}' if feats else ''
-    if systems:
-        second += (', and runs on ' if second else 'It runs on ') + and_list(systems)
-    second += '.' if second else ''
+    second = f'It has {and_list(feats[:4])}.' if feats else ''
     if pick['quality'] not in PLAYABLE:
-        second += ' None of these projects is fully playable yet.'
+        second += ' None of these projects is fully playable together yet.'
     if pick['stage'] == 'abandoned':
         second += ' Work on it has stopped.'
     return f'{first} {second.strip()}'.strip()
@@ -191,7 +195,7 @@ def fmt_date(d):
 
 def fmt_stars(n):
     if n is None:
-        return '—'
+        return '-'
     if n >= 1000:
         return f'{n / 1000:.{0 if n >= 10000 else 1}f}'.removesuffix('.0') + 'k'
     return str(n)
@@ -288,13 +292,30 @@ def trend_tag(e):
             f'{sign}{abs(t):.1f} since {since}</span>')
 
 
+def pct_html(e):
+    """Co-op %: the estimate at build time; game.js swaps in players' votes once loaded."""
+    if e['stage'] == 'wanted' or e.get('coopPct') is None:
+        return '<span class="muted">None yet</span>'
+    p = e['coopPct']
+    return (f'<span class="pct" style="--p:{p}" title="{p}% of the game playable together (estimate)">'
+            f'<span class="pct__track"><span class="pct__fill"></span></span><span class="pct__n mono">{p}%</span></span>')
+
+
+def scope_html(e):
+    sc = e.get('scope') or {}
+    items = ''.join(f'<li data-v="{esc(sc.get(k, "unknown"))}"><span class="scope__dot" aria-hidden="true"></span>{label}'
+                    f'<span class="scope__v">{SCOPE_WORD.get(sc.get(k, "unknown"), esc(sc.get(k, "")))}</span></li>'
+                    for k, label in SCOPE)
+    return f'<ul class="scope">{items}</ul>'
+
+
 def card(e, game, rows):
     multi = len(game['entries']) > 1
     t = TIERS[e['quality']]
     edition = re.search(r'\(([^)]*)\)\s*$', e['title']) if multi else None
     sub = [x for x in (e.get('team') if e.get('team') != e['project'] else None,
                        edition.group(1) if edition and not edition.group(1).isdigit() else None) if x]
-    ai = '<span class="ai" title="The project discloses substantial AI-generated code">AI</span>' if e.get('ai') else ''
+    ai = '<span class="ca-badge" title="Made with Co-op Anything">Co-op Anything</span>' if e.get('coopAnything') else ''
     badge = f'<span class="gp-badge">{pick_label(game)}</span>' if multi and e is game['pick'] else ''
     muted = '<span class="muted">{}</span>'.format
     small = ' <span class="small muted">{}</span>'.format
@@ -308,12 +329,22 @@ def card(e, game, rows):
     cells = [
         f'<div class="gp-cell gp-card__head">{badge}<h3 class="gp-card__title">{esc(e["project"])}</h3>'
         f'<p class="game__sub">{esc(" · ".join(sub))}{ai}</p></div>',
-        f'<div class="gp-cell gp-verdict"><span class="tier" data-tier="{e["quality"]}">{e["quality"]}</span>'
+        f'<div class="gp-cell gp-verdict"><span class="tier" data-tier="{e["quality"]}">{"?" if e["quality"] == "X" else e["quality"]}</span>'
         f'<div><strong>{esc(t["label"])}</strong><span>{esc(t["text"])}</span></div></div>',
     ]
     for row in rows:
         if row == 'console':
-            cells.append(fact('Console', f'{ctag(e["console"])} {esc(console_of(e["console"])["label"])}'))
+            cells.append(fact('Kind', f'{ctag(e["console"])} {esc(console_of(e["console"])["label"])}'))
+        elif row == 'coop':
+            cells.append(fact('Co-op', f'<span data-pct="{esc(e["id"])}">{pct_html(e)}</span>'))
+        elif row == 'scope':
+            cells.append(fact('Synced', scope_html(e) if e['stage'] != 'wanted' else muted('-')))
+        elif row == 'connect':
+            cells.append(fact('Connect', esc(e['toolchain']) if e.get('toolchain') not in (None, 'Unknown') else muted('Not stated')))
+        elif row == 'players':
+            cells.append(fact('Players', esc(e['players']) if e.get('players') else muted('Not stated')))
+        elif row == 'qa':
+            cells.append(fact('Tested', esc(e.get('qaLabel') or 'Not checked')))
         elif row == 'stage':
             cells.append(fact('Stage', stage_pill(e)))
         elif row == 'os':
@@ -326,7 +357,7 @@ def card(e, game, rows):
                 cells.append(fact('Runs on', muted('Not stated by the project')))
         elif row == 'features':
             feats = ''.join(f'<span class="feat">{esc(FEATURES.get(f, f))}</span>' for f in e.get('features') or [])
-            cells.append(fact('Features', f'<div class="feats">{feats}</div>' if feats else muted('None listed')))
+            cells.append(fact('Features', f'<div class="feats">{feats}</div>' if feats else muted('-')))
         elif row == 'release':
             if e.get('version') or e.get('versionDate'):
                 when = small(esc(fmt_date(e['versionDate']))) if e.get('versionDate') else ''
@@ -338,37 +369,39 @@ def card(e, game, rows):
             when = small(esc(fmt_date(e['updated']))) if e.get('updated') else ''
             cells.append(fact('Last activity', f'<span class="act act--{a}">{a.capitalize()}</span>{when}'))
         elif row == 'score':
-            if e.get('userScore') is not None:
-                n = e.get('userScoreCount') or 0
-                cells.append(fact('User score', f'<span class="mono">{e["userScore"]:.1f}</span> / 10'
-                                  + small(f'{n} {"rating" if n == 1 else "ratings"}') + trend_tag(e)))
-            else:
-                cells.append(fact('User score', f'<a href="#comments" data-rate="{esc(e["id"])}">Be the first to rate it</a>'
-                                  if COMMENTS_ON else muted('No ratings yet')))
+            cells.append(fact('Players say', f'<span class="gp-community" data-community="{esc(e["id"])}">'
+                              f'<a href="../../#{esc(e["id"])}">Rate it and vote on its co-op %</a></span>'))
         elif row == 'stars':
             stars = e.get('stars')
             gain = small(f'+{e["starsWeek"]:,} this week') if e.get('starsWeek') else ''
-            cells.append(fact('GitHub stars', f'<span class="mono">{stars:,}</span>{gain}' if stars is not None else muted('—')))
-        elif row == 'toolchain':
-            tool = 'Custom or unlisted' if e['toolchain'] == 'Custom' else e['toolchain']
-            cells.append(fact('Toolchain', f'<span class="mono">{esc(tool)}</span>'))
+            cells.append(fact('GitHub stars', f'<span class="mono">{stars:,}</span>{gain}' if stars is not None else muted('-')))
+
         elif row == 'summary':
             cells.append(text('About this project', f'<p>{esc(e["summary"])}</p>' if e.get('summary') else ''))
         elif row == 'requires':
             cells.append(text('What you need', f'<p>{esc(e["requires"])}</p>' if e.get('requires')
                               else '<p class="muted">Not stated</p>'))
+        elif row == 'sources':
+            urls = list(dict.fromkeys(u for u in (e.get('otherUrls') or []) + (e.get('sources') or [])
+                                      if u not in (e.get('repo'), e.get('website'))))
+            host = lambda u: re.sub(r'^www\.', '', u.split('://', 1)[-1].split('/', 1)[0])  # noqa: E731
+            links = ''.join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(host(u))}</a></li>' for u in urls)
+            cells.append(text('Sources', f'<ul class="d-sources">{links}</ul>' if links else '<p class="muted">-</p>'))
 
     link = e.get('repo') or e.get('website')
     correction = FEEDBACK_URL + '&' + urlencode({
-        'title': f'[Feedback]: {e["title"]}', 'game': e['title'],
-        'details': f'About {e["project"]}{f" ({link})" if link else ""}:\n\n'})
+        'title': f'[CoOp:Anything] {e["title"]}: {e["project"]}',
+        'body': f'About {e["project"]}{f" ({link})" if link else ""}, id {e["id"]}:\n\n'})
     links = []
     if e.get('repo'):
         links.append(f'<a class="btn" href="{esc(e["repo"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Repository ↗</a>')
     if e.get('website'):
-        links.append(f'<a class="btn btn--ghost" href="{esc(e["website"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Website ↗</a>')
+        links.append(f'<a class="btn{" btn--ghost" if e.get("repo") else ""}" href="{esc(e["website"])}" target="_blank" rel="noopener" data-visit="{esc(e["id"])}">Project page ↗</a>')
+    if e.get('writeup'):
+        links.append(f'<a class="btn btn--ghost" href="{esc(e["writeup"])}" target="_blank" rel="noopener">Co-op Anything write-up ↗</a>')
+    links.insert(0, f'<span class="gp-listing" data-listing="{esc(e["id"])}" hidden></span>')
     links.append(f'<a class="btn btn--ghost" href="{esc(correction)}" target="_blank" rel="noopener" '
-                 f'title="Something wrong or out of date? Opens the feedback form on GitHub with this game filled in">'
+                 f'title="Something wrong or out of date? Opens an issue on GitHub with this mod filled in">'
                  f'{PENCIL}Suggest a correction</a>')
     if MAIL_API:
         links.append(follow_form(e))
@@ -384,22 +417,34 @@ def page(game, share_url, snapshot):
     multi = len(es) > 1
     consoles = [console_of(k) for k in game['consoles']]
 
+    wanted = all(e['stage'] == 'wanted' for e in es)
     rows = ['console'] if len(game['consoles']) > 1 else []
-    rows += ['stage', 'os', 'features', 'release', 'activity', 'score', 'stars', 'toolchain']
-    rows += [r for r in ('summary', 'requires') if any(e.get(r) for e in es)]
+    if wanted:
+        rows += [r for r in ('summary',) if any(e.get(r) for e in es)]
+    else:
+        rows += ['stage', 'coop', 'scope', 'score', 'connect', 'players', 'qa', 'features', 'release', 'activity', 'stars']
+        rows += [r for r in ('summary', 'requires') if any(e.get(r) for e in es)]
+    rows += ['sources']
 
-    if multi:
-        title = f'{name}: {len(es)} recomps compared'
-        description = (f'{len(es)} projects bring {name} to PC. {pick_label(game)}: {pick["project"]} '
+    if wanted:
+        title = f'{name} co-op'
+        description = (f'Can you play {name} in co-op? No co-op mod has been found yet. '
+                       'See where people looked, and how to build one.')
+        lede = (f'Nobody has made {esc(name)} co-op yet, as far as anyone has found. Know a mod? '
+                f'<a href="{esc(SUBMIT_URL)}" target="_blank" rel="noopener">Add it</a>. Want to build one? '
+                f'<a href="{esc(QUICKSTART_URL)}" target="_blank" rel="noopener">Co-op Anything</a> shows your AI agent how.')
+    elif multi:
+        title = f'{name} co-op: {len(es)} mods compared'
+        description = (f'{len(es)} projects let you play {name} together. {pick_label(game)}: {pick["project"]} '
                        f'({pick["quality"]} tier, {STAGES[pick["stage"]]["label"].lower()}). '
-                       'Compare their stage, quality, systems and features.')
-        lede = f"{len(es)} projects bring {esc(name)} to PC. Here's how they compare, and which one to start with."
+                       'Compare how much of the game each one syncs.')
+        lede = f"{len(es)} projects let you play {esc(name)} together. Here's how they compare, and which one to start with."
     else:
         e = pick
-        title = f'{name} · {e["project"]}'
+        title = f'{name} co-op · {e["project"]}'
         by = f' by {e["team"]}' if e.get('team') and e['team'] != e['project'] else ''
         description = (f'{e["project"]}{by}: {STAGES[e["stage"]]["label"].lower()}, rated {e["quality"]} '
-                       f'({TIERS[e["quality"]]["label"]}) on Recomp Haven. ' + (e.get('summary') or ''))
+                       f'({TIERS[e["quality"]]["label"]}) on CoOp:Anything. ' + (e.get('summary') or ''))
         lede = (f'{esc(e["project"])}{esc(by)}: {esc(STAGES[e["stage"]]["label"].lower())}, '
                 f'rated {e["quality"]} ({esc(TIERS[e["quality"]]["label"])}).')
     if len(description) > 200:
@@ -409,13 +454,13 @@ def page(game, share_url, snapshot):
     meta_bits += [str(game['year'])] if game['year'] else []
     meta_bits += [esc(pick['developer'])] if pick.get('developer') else []
     meta_bits += [esc(pick['genre'])] if pick.get('genre') else []
-    crumbs = '<a href="../../">All recomps</a>'
+    crumbs = '<a href="../../">All co-op mods</a>'
     if len(game['consoles']) == 1:
         crumbs += f'<span aria-hidden="true">/</span><a href="../../?console={game["consoles"][0]}">{esc(consoles[0]["label"])}</a>'
     cover_entry = pick if pick.get('cover') else next((e for e in es if e.get('cover')), pick)
 
     pick_html = ''
-    if multi:
+    if multi and not wanted:
         by = f' <span class="gp-by">by {esc(pick["team"])}</span>' if pick.get('team') and pick['team'] != pick['project'] else ''
         pick_html = f'''
   <section class="gp-pick" aria-labelledby="gp-pick-title">
@@ -432,7 +477,7 @@ def page(game, share_url, snapshot):
   <h2 class="gp-h2">Every project, side by side</h2>'''
 
     cards = '\n      '.join(card(e, game, rows) for e in es)
-    missing = SUBMIT_URL + '&' + urlencode({'game': name})
+    missing = SUBMIT_URL + '&' + urlencode({'title': f'New co-op mod: {name}'})
     body = f'''  <nav class="crumbs" aria-label="Breadcrumb">{crumbs}</nav>
 
   <section class="gp-hero">
@@ -449,10 +494,16 @@ def page(game, share_url, snapshot):
   </div>
 
 {playthrough_html(game)}{comments_html(game)}
-  <p class="gp-missing">Know another project for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
+  <p class="gp-missing">Know another co-op mod for {esc(name)}? <a href="{esc(missing)}" target="_blank" rel="noopener">Submit it</a>.</p>'''
+    ld = {'@context': 'https://schema.org', '@type': 'VideoGame', 'name': name, 'url': f'{SITE}/games/{slug}/',
+          'description': description, 'image': share_url, 'gameMode': ['Co-op', 'Multiplayer'],
+          'subjectOf': {'@type': 'ItemList', 'name': f'Co-op mods for {name}', 'numberOfItems': len(es),
+                        'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'name': e['project'],
+                                             **({'url': e.get('repo') or e.get('website')} if (e.get('repo') or e.get('website')) else {})}
+                                            for n, e in enumerate(es)]}}
     return document(title=title, description=description, path=f'games/{slug}/', share_url=share_url,
-                    image_alt=f'{name} on Recomp Haven: {pick["project"]}, {pick["quality"]} tier',
-                    body=body, snapshot=snapshot, visit=None if multi else pick['id'])
+                    image_alt=f'{name} on CoOp:Anything: {pick["project"]}, {pick["quality"]} tier',
+                    body=body, snapshot=snapshot, visit=None if multi else pick['id'], ld=ld)
 
 
 def comments_html(game):
@@ -509,22 +560,24 @@ def analytics_note():
             'without cookies or personal data, to rank Trending.</p>\n')
 
 
-def document(*, title, description, path, share_url, image_alt, body, snapshot, visit=None):
+def document(*, title, description, path, share_url, image_alt, body, snapshot, visit=None, scripts=(), ld=None):
     """A whole page in the site's header and footer. path is from the site root, like "games/pt/".
     visit: the id of a project to count a visit for when the page opens."""
     root = '../' * path.count('/')
     url = f'{SITE}/{path}'
     body_attr = f' data-visit="{esc(visit)}"' if visit else ''
+    ld_tag = ('\n<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace('</', '<\\/') + '</script>') if ld else ''
+    extra_scripts = ''.join(f'\n<script src="{root}{name}"></script>' for name in scripts)
     return f'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{esc(title)} · Recomp Haven</title>
+<title>{esc(title)} · CoOp:Anything</title>
 <meta name="description" content="{esc(description)}">
-<link rel="canonical" href="{url}">
+<link rel="canonical" href="{url}">{ld_tag}
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Recomp Haven">
+<meta property="og:site_name" content="CoOp:Anything">
 <meta property="og:title" content="{esc(title)}">
 <meta property="og:description" content="{esc(description)}">
 <meta property="og:url" content="{url}">
@@ -533,7 +586,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{esc(image_alt)}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="alternate" type="application/rss+xml" title="Recomp Haven: latest releases" href="{SITE}/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="CoOp:Anything: latest releases" href="{SITE}/feed.xml">
 <link rel="icon" href="{root}favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icons/icon-192.png">
@@ -548,15 +601,16 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 
 <header class="masthead masthead--slim">
   <div class="wrap masthead__top">
-    <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="Re:Haven, back to every recomp" width="1615" height="338"></a>
+    <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="CoOp:Anything, back to every co-op mod" width="2074" height="370"></a>
     <div class="masthead__actions">
-      {newsletter_button(root)}<a class="submit-btn feedback-btn" href="{FEEDBACK_URL}" target="_blank" rel="noopener" aria-label="Send feedback" title="Feedback on a game's summary or tier, or ideas to make the site better (opens a form on GitHub)">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-        <span>Send feedback</span>
+      {newsletter_button(root)}<a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
+      <a class="submit-btn feedback-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.49 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.7 19.7 0 0 0-4.88 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42Z"/></svg>
+        <span>Join Discord</span>
       </a>
-      <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" aria-label="Submit a game" title="Suggest a missing recomp, decomp or port (opens a form on GitHub)">
+      <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        <span>Submit a game</span>
+        <span>Submit a mod</span>
       </a>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
         <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
@@ -571,11 +625,14 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 </main>
 
 <footer class="wrap footer">
-  <p>Every recomp on this list needs your own legally obtained copy of the game. Recomp Haven links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>. Repository stats from GitHub; tiers and stages are Recomp Haven's own. Box art belongs to each game's publisher. <a href="{root}">See every recomp</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a> · <a href="{BUG_URL}" target="_blank" rel="noopener">Report a bug</a> · <a href="{REPO_URL}" target="_blank" rel="noopener">Source code</a> (MIT License; built with AI help).</p>
+  <p>Every mod listed needs your own copy of the game. CoOp:Anything links to projects and hosts no game files.</p>
+  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>, from the <a href="{REPO_URL}/blob/main/DIRECTORY.md" target="_blank" rel="noopener">Co-op Anything directory</a>; repository stats from GitHub. Box art belongs to each game's publisher. <a href="{root}">See every co-op mod</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a> · <a href="{BUG_URL}" target="_blank" rel="noopener">Report a bug</a>. Built on <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">Recomp Haven</a> by rikuwru (MIT License), with AI help.</p>
 {analytics_note()}</footer>
 
+<script src="{root}i18n.js"></script>
+<script src="{root}md.js"></script>
 <script src="{root}game.js"></script>
+<script src="{root}account.js"></script>{extra_scripts}
 </body>
 </html>
 '''
@@ -637,6 +694,24 @@ def release_url(e):
     return e.get('repo') or e.get('website')
 
 
+def my_page(share_url, snapshot):
+    """My projects (/my/): a logged-in dev's mods, to view and edit (my.js fills it in)."""
+    body = """  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">All co-op mods</a></nav>
+
+  <header class="rl-head">
+    <div class="gp-hero__text">
+      <h1 class="gp-title">My projects</h1>
+      <p class="gp-lede">The co-op mods you're a dev of. Edit their description, video, links and what's synced here,
+        or with <code>/listing</code> in your Discord topic.</p>
+    </div>
+  </header>
+
+  <div id="my-projects" class="my-projects" data-root="../"><p class="muted">Loading...</p></div>"""
+    return document(title='My projects', description='Edit the listings of the co-op mods you develop.', path='my/',
+                    share_url=share_url, image_alt='CoOp:Anything: every co-op mod for single-player games', body=body,
+                    snapshot=snapshot, scripts=('my.js',))
+
+
 def releases_page(entries, share_url, snapshot):
     items = releases(entries)
     month_ago = (TODAY - dt.timedelta(days=30)).isoformat()
@@ -683,12 +758,12 @@ def releases_page(entries, share_url, snapshot):
     </ol>
   </section>''')
 
-    body = f'''  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">All recomps</a></nav>
+    body = f'''  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">All co-op mods</a></nav>
 
   <header class="rl-head">
     <div class="gp-hero__text">
       <h1 class="gp-title">Latest releases</h1>
-      <p class="gp-lede">The newest release of every project on Recomp Haven, newest first.
+      <p class="gp-lede">The newest release of every co-op mod on CoOp:Anything, newest first.
         {recent} {'project' if recent == 1 else 'projects'} released something in the last 30 days.</p>
     </div>
     <a class="btn btn--ghost" href="../feed.xml">{RSS_ICON} RSS feed</a>
@@ -696,9 +771,9 @@ def releases_page(entries, share_url, snapshot):
 
 ''' + '\n\n'.join(sections)
     return document(title='Latest releases', description=(
-        'The newest releases of every game recompilation, decompilation and native port on Recomp Haven, '
+        'The newest releases of every co-op mod on CoOp:Anything, '
         'newest first. Subscribe with RSS.'), path='releases/', share_url=share_url,
-        image_alt='Recomp Haven: The Sanctuary for Native Game Ports.', body=body, snapshot=snapshot)
+        image_alt='CoOp:Anything: every co-op mod for single-player games', body=body, snapshot=snapshot)
 
 
 def feed(entries, limit=50):
@@ -716,17 +791,17 @@ def feed(entries, limit=50):
         items.append(f'''  <item>
     <title>{esc(f"{e['project']} {version}".strip())} · {esc(e['title'])}</title>
     <link>{SITE}/games/{slug_of(e['title'])}/</link>
-    <guid isPermaLink="false">recomphaven:{esc(e['id'])}@{esc(version or e['versionDate'])}</guid>
+    <guid isPermaLink="false">coophaven:{esc(e['id'])}@{esc(version or e['versionDate'])}</guid>
     <pubDate>{format_datetime(when)}</pubDate>
     <description>{esc(about)}</description>
   </item>''')
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>Recomp Haven: latest releases</title>
+  <title>CoOp:Anything: latest releases</title>
   <link>{SITE}/releases/</link>
   <atom:link href="{SITE}/feed.xml" rel="self" type="application/rss+xml"/>
-  <description>New releases of game recompilations, decompilations and native ports, from Recomp Haven.</description>
+  <description>New releases of co-op mods for single-player games, from CoOp:Anything.</description>
   <language>en</language>
   <lastBuildDate>{format_datetime(dt.datetime.now(dt.timezone.utc))}</lastBuildDate>
 ''' + '\n'.join(items) + '''
@@ -838,8 +913,8 @@ def game_card(game, out):
     x, right = 520, W - PAD
     width = right - x
     mark = logo(46)
-    im.paste(mark, (x - round(mark.width * 42 / 1615), PAD), mark)
-    d.text((right, PAD + 34), 'recomphaven.com', font=font(BOLD, 24), fill=INK['accent'], anchor='rs')
+    im.paste(mark, (x - round(mark.width * 40 / 2074), PAD), mark)
+    d.text((right, PAD + 34), SITE_HOST, font=font(BOLD, 22), fill=INK['accent'], anchor='rs')
 
     # Title: as big as fits in three lines above the meta line, but on fewer lines
     # when that costs little size ("P.T. (Silent Hills)" stays on one line).
@@ -877,7 +952,7 @@ def game_card(game, out):
     # Tier and stage, then the project count, shortened until it fits.
     tier = TIERS[pick['quality']]['label']
     if multi:
-        stage = STAGES[pick['stage']]['label'].replace('Playable beta', 'Beta')
+        stage = STAGES[pick['stage']]['label']
         options = [f'{tier} · {stage} · {len(es)} projects compared', f'{tier} · {stage} · {len(es)} projects', f'{tier} · {stage}']
     else:
         by = f'by {pick["team"]}' if pick.get('team') and pick['team'] != pick['project'] else ''
@@ -892,15 +967,15 @@ def game_card(game, out):
 def home_card(entries, games, out):
     im, d = canvas()
     mark = logo(104)
-    im.paste(mark, (PAD - round(mark.width * 42 / 1615), 92), mark)
+    im.paste(mark, (PAD - round(mark.width * 40 / 2074), 92), mark)
     f = font(MEDIUM, 32)
     y = 92 + 104 + 62
-    for ln in wrap('The Sanctuary for Native Game Ports.', f, 330):  # breaks after "for"
+    for ln in wrap('Every co-op mod for single-player games.', f, 420):
         d.text((PAD, y), ln, font=f, fill=INK['fg'], anchor='ls')
         y += 42
 
-    # The four stage counts, two by two.
-    for i, st in enumerate(STAGE_ORDER):
+    # Four stage counts, two by two (abandoned is left out).
+    for i, st in enumerate([s for s in STAGE_ORDER if s != 'abandoned'][:4]):
         x, y = PAD + (i % 2) * 290, 452 + (i // 2) * 100
         n = str(sum(1 for e in entries if e['stage'] == st))
         d.text((x, y), n, font=font(DISPLAY, 76), fill=INK['fg'], anchor='ls')
@@ -909,8 +984,8 @@ def home_card(entries, games, out):
         d.text((lx + 20, y - 8), STAGES[st]['label'], font=font(BOLD, 23), fill=INK['muted'], anchor='ls')
 
     # Box art from the best-loved top-tier games.
-    top = sorted((g['pick'] for g in games if g['pick'].get('cover') and g['pick']['quality'] in ('S', 'A')),
-                 key=lambda e: -(e.get('stars') or 0))[:6]
+    top = sorted((g['pick'] for g in games if g['pick'].get('cover') and g['pick']['quality'] in ('S', 'A', 'B')),
+                 key=lambda e: ('SAB'.index(e['quality']), -(e.get('stars') or 0)))[:6]
     cw, ch, gap = 150, 200, 16
     gx, gy = W - PAD - 3 * cw - 2 * gap, 92
     for i, e in enumerate(top):
@@ -921,7 +996,7 @@ def home_card(entries, games, out):
         art = art.resize((round(art.width * s), round(art.height * s)), Image.LANCZOS)
         cell.paste(art, ((cw - art.width) // 2, (ch - art.height) // 2))
         im.paste(cell, (cx, cy), rounded(cell, 10))
-    d.text((W - PAD, H - PAD + 6), 'recomphaven.com', font=font(BOLD, 26), fill=INK['accent'], anchor='rs')
+    d.text((W - PAD, H - PAD + 6), SITE_HOST, font=font(BOLD, 24), fill=INK['accent'], anchor='rs')
     im.save(out, 'JPEG', quality=86, optimize=True, progressive=True)
 
 
@@ -948,9 +1023,11 @@ def main():
     games = group(entries)
     snapshot = meta.get('snapshot') or TODAY.isoformat()
 
-    if os.path.exists(out):
-        shutil.rmtree(out)
-    os.makedirs(out)
+    # Empty the folder rather than delete it: on Windows a running `wrangler dev` holds it open.
+    os.makedirs(out, exist_ok=True)
+    for name in os.listdir(out):
+        path = os.path.join(out, name)
+        shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
     for name in STATIC:
         src = os.path.join(ROOT, name)
         (shutil.copytree if os.path.isdir(src) else shutil.copy2)(src, os.path.join(out, name))
@@ -963,7 +1040,7 @@ def main():
     with open(os.path.join(out, 'index.html'), encoding='utf-8') as f:
         index = f.read()
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
-        f.write(index.replace(f'{SITE}/assets/share/home.jpg', home_url)
+        f.write(index.replace('https://SITE_URL/assets/share/home.jpg', home_url).replace('https://SITE_URL', SITE)
                 .replace('</head>', analytics_tag()
                          + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + mail_meta() + '</head>', 1)
                 .replace('</footer>', analytics_note() + '</footer>', 1))
@@ -971,6 +1048,9 @@ def main():
     os.makedirs(os.path.join(out, 'releases'))
     with open(os.path.join(out, 'releases', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(releases_page(entries, home_url, snapshot))
+    os.makedirs(os.path.join(out, 'my'), exist_ok=True)
+    with open(os.path.join(out, 'my', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(my_page(home_url, snapshot))
     with open(os.path.join(out, 'feed.xml'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(feed(entries))
 
@@ -992,8 +1072,18 @@ def main():
     with open(os.path.join(out, 'robots.txt'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(f'User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n')
 
+    # The Worker only takes votes for projects on the list.
+    with open(os.path.join(out, 'data', 'ids.json'), 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(sorted(e['id'] for e in entries if e['stage'] != 'wanted'), f)
+    # The Discord bot's /listing link autocomplete: every listed mod's id, game and project name.
+    # urls (main page, other links) let the bot match a Discord topic or a dev's repo to its listing.
+    with open(os.path.join(out, 'data', 'mods.json'), 'w', encoding='utf-8', newline='\n') as f:
+        json.dump([{'id': e['id'], 'game': e['title'], 'project': e.get('project') or '',
+                    'urls': [u for u in [e.get('repo') or e.get('website')] + (e.get('otherUrls') or []) if u]}
+                   for e in sorted(entries, key=lambda e: e['title'].lower()) if e['stage'] != 'wanted'], f, ensure_ascii=False)
+
     multi = sum(1 for g in games if len(g['entries']) > 1)
-    print(f'{len(entries)} recomps, {len(games)} game pages ({multi} comparing several projects) -> {out}')
+    print(f'{len(entries)} projects, {len(games)} game pages ({multi} comparing several projects) -> {out}')
 
 
 if __name__ == '__main__':

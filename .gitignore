@@ -18,3 +18,9 @@ desktop.ini
 
 # Built site (tools/build_pages.py); GitHub Actions builds its own on deploy
 _site/
+node_modules/
+.wrangler/
+.dev.vars
+
+# Crash dumps
+*.stackdump

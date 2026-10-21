@@ -1,0 +1,15 @@
+{
+  "name": "coop-haven",
+  "private": true,
+  "description": "CoOp:Anything: every co-op mod for single-player games. Static site plus a Cloudflare Worker for votes.",
+  "scripts": {
+    "import": "python tools/import_coop.py",
+    "build": "python tools/build_pages.py",
+    "dev": "python tools/build_pages.py && wrangler d1 migrations apply coop-haven --local && wrangler dev",
+    "setup": "node scripts/setup.mjs",
+    "deploy": "python tools/build_pages.py && wrangler d1 migrations apply coop-haven --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.148.0"
+  }
+}
