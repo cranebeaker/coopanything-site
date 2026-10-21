@@ -17,6 +17,7 @@
 
 import { BadField, canEdit, checkFields, publicListing, save } from './listings.js';
 import { callback, login, logout, me, session } from './auth.js';
+import { checkReleases, releaseMap } from './releases.js';
 
 const CANONICAL_HOST = 'coopanything.app';
 
@@ -109,6 +110,14 @@ async function allStats(env) {
   for (const [id, c] of Object.entries(visits)) if (!stats[id]) stats[id] = shape(null, null, c);
   const listings = {};
   for (const r of lists.results) listings[r.id] = publicListing(r);
+  // Releases found by the schedule: shown unless the devs posted a newer version themselves.
+  for (const [id, r] of Object.entries(await releaseMap(env))) {
+    const l = (listings[id] ||= {});
+    if (!l.versionDate || (r.version_date || '') > l.versionDate) {
+      l.version = r.version; l.versionDate = r.version_date;
+      if (r.url) l.releaseUrl = r.url;
+    }
+  }
   const body = { stats, listings, generated: new Date().toISOString() };
   statsCache = { at: Date.now(), body };
   return body;
@@ -258,6 +267,10 @@ async function page(request, env, url) {
 }
 
 export default {
+  // The release check (worker/releases.js) runs on the cron in wrangler.jsonc.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(checkReleases(env).then((r) => console.log('releases', JSON.stringify(r))).catch((e) => console.error(e)));
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     // One address for search engines and logins: everything but the API moves to coopanything.app.
@@ -276,6 +289,12 @@ export default {
       if (url.pathname === '/api/vote' && request.method === 'POST') return await vote(request, env, url);
       if (url.pathname === '/api/hit' && request.method === 'POST') return await hit(request, env, url);
       if (url.pathname === '/api/listing' && request.method === 'POST') return await listing(request, env, url);
+      if (url.pathname === '/api/releases/check' && request.method === 'POST') {
+        if (!sameSecret((request.headers.get('Authorization') || '').replace(/^Bearer /, ''), env.LISTING_SECRET)) return json({ ok: false, error: 'Not allowed.' }, 403);
+        const out = await checkReleases(env, { limit: Math.min(Number(url.searchParams.get('limit')) || 20, 40) });
+        statsCache = null;
+        return json({ ok: true, ...out });
+      }
       if (url.pathname === '/api/listing/edit' && request.method === 'POST') return await editListing(request, env, url);
       if (url.pathname === '/api/me' && request.method === 'GET') return await me(request, env);
       if (url.pathname === '/api/my-listings' && request.method === 'GET') return await myListings(request, env);

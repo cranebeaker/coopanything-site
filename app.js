@@ -674,7 +674,8 @@
 
   // ── What's new: latest releases and trending ─────────────
 
-  const LATEST = DATA.filter((e) => e.versionDate)
+  // Worked out each time, so releases found after the build (worker/releases.js) show up too.
+  const latest = () => DATA.filter((e) => e.versionDate)
     .sort((a, b) => b.versionDate.localeCompare(a.versionDate) || (b.stars || 0) - (a.stars || 0))
     .slice(0, 5);
   let TRENDING = [];
@@ -688,7 +689,7 @@
 
   // Latest releases: one chip per release in the slim strip.
   function renderPulse() {
-    $('#latest-list').innerHTML = LATEST.map((e) => `<li><button type="button" class="pulse__chip" data-open="${esc(e.id)}">
+    $('#latest-list').innerHTML = latest().map((e) => `<li><button type="button" class="pulse__chip" data-open="${esc(e.id)}">
       <strong>${esc(e.title)}</strong> <span class="mono">${esc(e.version || '')}</span>
       <time datetime="${esc(e.versionDate)}" title="${esc(fmtDate(e.versionDate))}">${esc(relTime(e.versionDate))}</time></button></li>`).join('');
   }

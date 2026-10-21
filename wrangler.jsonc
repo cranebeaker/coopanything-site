@@ -6,6 +6,10 @@
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
   // The site's own domain (Cloudflare zone on this account). workers.dev and www redirect to it (worker/index.js).
+  // Every 30 minutes: read a slice of the listed repos' release feeds (worker/releases.js).
+  "triggers": { "crons": ["*/30 * * * *"] },
+  // New releases are posted in the mod's Discord topic by the bot Worker.
+  "services": [{ "binding": "BOT", "service": "bot" }],
   "routes": [
     { "pattern": "coopanything.app", "custom_domain": true },
     { "pattern": "www.coopanything.app", "custom_domain": true }

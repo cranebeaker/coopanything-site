@@ -1075,6 +1075,14 @@ def main():
     # The Worker only takes votes for projects on the list.
     with open(os.path.join(out, 'data', 'ids.json'), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(sorted(e['id'] for e in entries if e['stage'] != 'wanted'), f)
+    # The release check (worker/releases.js): every listed mod's GitHub repo.
+    repos = []
+    for e in entries:
+        m = re.match(r'https://github\.com/([\w.-]+)/([\w.-]+?)(?:\.git)?/?(?:[#?].*)?$', e.get('repo') or '')
+        if m and e['stage'] != 'wanted':
+            repos.append({'id': e['id'], 'repo': f'{m[1]}/{m[2]}'})
+    with open(os.path.join(out, 'data', 'repos.json'), 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(repos, f)
     # The Discord bot's /listing link autocomplete: every listed mod's id, game and project name.
     # urls (main page, other links) let the bot match a Discord topic or a dev's repo to its listing.
     with open(os.path.join(out, 'data', 'mods.json'), 'w', encoding='utf-8', newline='\n') as f:
