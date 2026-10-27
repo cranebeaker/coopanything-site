@@ -1653,3 +1653,12 @@ select.ed-field { cursor: pointer; }
 .ed-tools button { display: inline-grid; place-items: center; }
 .ed-tools .icon, .d-rate summary .icon, .ed-bar .icon { margin: 0; }
 .d-rate summary .icon { color: var(--warn); }
+
+/* Plain links to every game page, so crawlers can reach them without running the table script. */
+.seo-index { padding-block: 8px 48px; color: var(--muted); }
+.seo-index h2 { font-size: 1.1rem; color: var(--fg); margin: 0 0 8px; }
+.seo-index p { max-width: 70ch; margin: 0 0 14px; }
+.seo-index__list { list-style: none; margin: 0 0 14px; padding: 0; columns: 14rem auto; column-gap: 24px; font-size: .875rem; }
+.seo-index__list li { break-inside: avoid; padding: 2px 0; }
+.seo-index__list span { font-size: .75rem; }
+.seo-index summary { cursor: pointer; margin-bottom: 10px; }
