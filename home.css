@@ -93,7 +93,11 @@ body.home :focus-visible { outline: 3px solid #0a84ff; outline-offset: 2px; }
 .nav__brand {
   display: flex; align-items: center; gap: 10px; flex: none;
   color: var(--fg) !important; text-decoration: none;
-  font-weight: 600; font-size: 16px; letter-spacing: -0.015em;
+  font-weight: 800; font-size: 19px; letter-spacing: -0.035em;
+}
+.nav__brand span {
+  background: linear-gradient(90deg, var(--grad-a), var(--grad-b));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .nav__links { display: flex; gap: 28px; }
 .nav__links a { color: var(--fg); font-size: 13px; opacity: 0.82; text-decoration: none; white-space: nowrap; }
@@ -219,7 +223,7 @@ body.home :focus-visible { outline: 3px solid #0a84ff; outline-offset: 2px; }
 /* ── The Couchlink band ── */
 .cl-band {
   grid-column: 1 / -1; margin: 28px 0;
-  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 44px; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 44px; align-items: center;
   padding: 48px 52px; border-radius: 36px; background: var(--accent-soft); overflow: hidden; cursor: default;
 }
 .cl-band__eyebrow { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; color: var(--link); }
@@ -237,10 +241,19 @@ body.home :focus-visible { outline: 3px solid #0a84ff; outline-offset: 2px; }
 .cl-step--2 { background: #ff6b57; color: #1a0603; }
 .cl-step--3 { background: #30d158; color: #04210d; }
 .cl-step--4 { background: #ffd60a; color: #2b2300; }
-.cl-band__shots { position: relative; padding-bottom: 24%; }
-.cl-shot { display: block; height: auto; border-radius: 14px; box-shadow: 0 24px 60px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(0 0 0 / 0.12); }
-.cl-shot--back { width: 90%; }
-.cl-shot--front { position: absolute; right: 0; bottom: 0; width: 70%; }
+.cl-band__shots { position: relative; aspect-ratio: 1 / 0.92; }
+.cl-shot { position: absolute; display: block; height: auto; border-radius: 14px; box-shadow: 0 24px 60px rgb(0 0 0 / 0.32), 0 0 0 1px rgb(0 0 0 / 0.14); }
+.cl-shot--library { top: 0; left: 0; width: 80%; z-index: 1; }
+.cl-shot--players { top: 21%; right: 0; width: 74%; z-index: 2; }
+.cl-shot--screens { top: 53%; left: 6%; width: 68%; z-index: 3; }
+/* The screenshots follow the page theme. */
+.cl-shot--dark { display: none; }
+:root[data-theme="dark"] .cl-shot--light { display: none; }
+:root[data-theme="dark"] .cl-shot--dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cl-shot--light { display: none; }
+  :root:not([data-theme="light"]) .cl-shot--dark { display: block; }
+}
 
 /* ── Narrower screens ── */
 @media (max-width: 1240px) { .cards { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

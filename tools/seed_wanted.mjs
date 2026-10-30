@@ -95,7 +95,9 @@ for (const g of games) {
   }
   const siteId = listed.get(norm(g.name)) || pinned.get(g.igdb_id) || null;
   counts[coop] = (counts[coop] || 0) + 1;
-  catalog.push({ i: g.igdb_id, n: g.name, l: g.slug, y: g.year, c: covers.get(g.igdb_id) || null, g: g.steam_appid, k: coop, s: siteId, p: data ? data.projects : [] });
+  // r/rn: a release date still ahead (games.json "release", "release_note"); the site shows "Coming soon".
+  catalog.push({ i: g.igdb_id, n: g.name, l: g.slug, y: g.year, c: covers.get(g.igdb_id) || null, g: g.steam_appid, k: coop, s: siteId, p: data ? data.projects : [],
+    ...(g.release ? { r: g.release, ...(g.release_note ? { rn: g.release_note } : {}) } : {}) });
   out.push(`INSERT INTO wanted_games (igdb_id, name, slug, year, cover, steam_appid, ratings, coop, research, site_id, requested_by, created, search) VALUES (${[
     g.igdb_id, q(g.name), q(g.slug), q(g.year), q(covers.get(g.igdb_id) || null), q(g.steam_appid), q(g.ratings), q(coop),
     q(data ? JSON.stringify(data) : null), q(siteId), 'NULL', now, q(searchKey(g.name))].join(', ')})

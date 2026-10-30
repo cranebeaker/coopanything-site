@@ -506,7 +506,8 @@
 
   const KIND_LABEL = { repo: 'Repository', 'mod-page': 'Mod page', site: 'Project site', article: 'Article', video: 'Video', discussion: 'Discussion', suggested: 'Suggested by the community' };
   const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
-  const wantedStatus = (k, mods) => (k === 'official_coop' ? 'Has official co-op'
+  const wantedStatus = (k, mods) => (k === 'coming_soon' ? 'Coming soon'
+    : k === 'official_coop' ? 'Has official co-op'
     : k === 'mod_found' && mods.length ? `${mods.length} ${mods.every((m) => m.a) ? 'possible ' : ''}co-op ${mods.length > 1 ? 'mods' : 'mod'} found`
     : k === 'none_found' ? 'No co-op mod found' : 'Not checked yet');
 
@@ -526,6 +527,8 @@
       // Links the community suggested and a person approved.
       for (const s of w.sg || []) if (!mods.some((m) => m.url === s.url)) mods.push({ name: hostOf(s.url), url: s.url, summary: s.note || '', kind: 'suggested' });
       if (w.sg && w.sg.length && (k === 'unchecked' || k === 'none_found')) k = 'mod_found';
+      // A game with a release date still ahead is "coming soon": nothing to check until it is out.
+      if (w.r && w.r > new Date().toISOString().slice(0, 10)) k = 'coming_soon';
       const gap = gaps.get(norm(w.n));
       if (gap && !w.s) { dropped.add(gap.id); if (k === 'unchecked') k = 'none_found'; }
       let e = WANTED.get(w.i);
@@ -548,6 +551,7 @@
       }
       Object.assign(e, {
         wantedVotes: w.v, wantedCoop: k, wantedMods: mods, igdbSlug: w.l, steam: w.g, siteId: w.s || null, project: wantedStatus(k, mods),
+        releaseDate: w.r || null, releaseNote: w.rn || null,
         cover: w.c ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${w.c}.jpg` : undefined,
       });
       // A game that already has a mod listed: its initials ("fnv") find that mod too.
@@ -641,7 +645,9 @@
       e.igdbSlug && `<a href="https://www.igdb.com/games/${encodeURIComponent(e.igdbSlug)}" target="_blank" rel="noopener">IGDB</a>`,
       e.steam && `<a href="https://store.steampowered.com/app/${encodeURIComponent(e.steam)}" target="_blank" rel="noopener">Steam</a>`,
     ].filter(Boolean).join(' · ');
-    const lead = e.wantedCoop === 'official_coop' ? 'This game ships with its own co-op.'
+    const when = e.releaseDate ? new Date(`${e.releaseDate}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
+    const lead = e.wantedCoop === 'coming_soon' ? `Coming soon: <strong>${esc(e.title)}</strong> releases ${esc(when)}.${e.releaseNote ? ` ${esc(e.releaseNote)}` : ''} Co-op mods will be looked for once it is out. You can still upvote it.`
+      : e.wantedCoop === 'official_coop' ? 'This game ships with its own co-op.'
       : mods.length ? ''
       : e.wantedCoop === 'none_found' ? `Nobody has made <strong>${esc(e.title)}</strong> co-op yet, as far as anyone has found.`
       : 'Nobody has checked this game for co-op mods yet.';
