@@ -26,6 +26,32 @@ check('partial update keeps other fields', (await post({ id: ID, note: 'Second n
 r = await post({ id: ID, clear: ['discord', 'note'] });
 const after = (await stats())[ID] || {};
 check('clear removes fields', r.status === 200 && !after.discord && !after.note && after.stage === 'beta');
-await post({ id: ID, clear: ['stage', 'version'] });
+// Community listings: publish, then moderate (Mark reviewed / Hide), owner secret only.
+const RUN = Math.random().toString(36).slice(2, 8);
+const comm = (path, body, secret = SECRET) => fetch(`${BASE}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...(secret ? { Authorization: `Bearer ${secret}` } : {}) }, body: JSON.stringify(body) });
+const cl = async () => (await (await fetch(`${BASE}/api/stats`)).json()).community || [];
+const made = await (await comm('/api/community', { game: 'Review Test Game', project: 'review test', url: `https://github.com/zz/review-test-${RUN}`, by: '1' })).json();
+const found = async () => (await cl()).find((c) => c.id === made.id);
+check('a new community listing is public and not reviewed', made.ok && made.created && (await found())?.reviewed === 0);
+check('review needs the secret', (await comm('/api/community/review', { id: made.id, action: 'review' }, null)).status === 403);
+check('review of an unknown listing is refused', (await comm('/api/community/review', { id: 'nope-nope', action: 'review' })).status === 400);
+check('review with a bad action is refused', (await comm('/api/community/review', { id: made.id, action: 'delete' })).status === 400);
+check('Mark reviewed sets the flag', (await comm('/api/community/review', { id: made.id, action: 'review' })).status === 200 && (await found())?.reviewed === 1);
+check('Hide removes it from the public list', (await comm('/api/community/review', { id: made.id, action: 'hide' })).status === 200 && !(await found()));
+check('a hidden link cannot be listed again', (await comm('/api/community', { game: 'Review Test Game', project: 'review test', url: `https://github.com/zz/review-test-${RUN}`, by: '1' })).status === 400);
+
+// Handoff: a community listing whose repo now has a directory entry moves to that entry on the next cron.
+const dirRepos = (await (await fetch(`${BASE}/data/repos.json`)).json()).filter((r) => /^[\w.-]+\/[\w.-]+$/.test(r.repo));
+const pick = dirRepos[Math.floor(Math.random() * dirRepos.length)];
+const DIR_ID = pick.id;
+const hand = await (await comm('/api/community', { game: 'Handoff Test', project: 'anchor', url: `https://github.com/${pick.repo.toUpperCase()}`, by: '1' })).json();
+await post({ id: hand.id, by: '1', discord: 'https://discord.com/channels/1561411702082510879/1562159739243331584', stage: 'beta' });
+const cron = await fetch(`${BASE}/__scheduled?cron=*+*+*+*+*`);
+await new Promise((r) => setTimeout(r, 1500));
+const afterHand = await (await fetch(`${BASE}/api/stats`)).json();
+check('cron ran', cron.status === 200);
+check('handoff: the community duplicate is hidden', !(afterHand.community || []).some((c) => c.id === hand.id));
+check('handoff: the directory entry took over the Discord topic and settings', afterHand.listings[DIR_ID]?.discord?.endsWith('/1562159739243331584') && afterHand.listings[DIR_ID]?.stage === 'beta' && !afterHand.listings[hand.id]);
+await post({ id: DIR_ID, clear: ['discord', 'stage'] });await post({ id: ID, clear: ['stage', 'version'] });
 console.log(failed ? `${failed} failed` : 'all passed');
 process.exit(failed ? 1 : 0);

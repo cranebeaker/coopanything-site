@@ -20,18 +20,45 @@ export function parseFeed(xml) {
   return { version, date: updated.slice(0, 10), url: href || null };
 }
 
+const GITHUB_REPO = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/;
+
+// The directory's repos (built into the site) plus the GitHub repos devs linked themselves with
+// /request-dev or /listing add, so their releases show up too.
 async function repoList(env) {
   const res = await env.ASSETS.fetch(new Request('https://coopanything.app/data/repos.json'));
-  return res.ok ? res.json() : [];
+  const repos = res.ok ? await res.json() : [];
+  try {
+    const set = (await env.DB.prepare('SELECT id, repo FROM listings WHERE repo IS NOT NULL').all()).results;
+    for (const s of set) {
+      const m = GITHUB_REPO.exec(s.repo || '');
+      if (!m) continue;
+      const hit = repos.find((r) => r.id === s.id);
+      if (hit) hit.repo = `${m[1]}/${m[2]}`; else repos.push({ id: s.id, repo: `${m[1]}/${m[2]}` });
+    }
+  } catch { /* the directory's repos still get checked */ }
+  try {
+    const have = new Set(repos.map((r) => r.id));
+    const rows = (await env.DB.prepare('SELECT id, url FROM community WHERE hidden = 0').all()).results;
+    for (const r of rows) {
+      const m = GITHUB_REPO.exec(r.url || '');
+      if (m && !have.has(r.id)) repos.push({ id: r.id, repo: `${m[1]}/${m[2]}` });
+    }
+  } catch { /* the directory's repos still get checked */ }
+  return repos;
 }
 
-export async function checkReleases(env, { limit = PER_RUN, fetchFeed = (url) => fetch(url, { headers: { 'User-Agent': UA } }) } = {}) {
+const RECENT_DAYS = 7;
+
+// ids: check just these mods now (a manual run), instead of the longest-unchecked slice.
+export async function checkReleases(env, { limit = PER_RUN, ids = null, fetchFeed = (url) => fetch(url, { headers: { 'User-Agent': UA } }) } = {}) {
   const repos = await repoList(env);
   if (!repos.length) return { checked: 0, found: [] };
   const rows = (await env.DB.prepare('SELECT id, version, checked FROM releases').all()).results;
   const known = new Map(rows.map((r) => [r.id, r]));
   // Never-checked repos first, then the ones checked longest ago.
-  const batch = repos.slice().sort((a, b) => (known.get(a.id)?.checked || 0) - (known.get(b.id)?.checked || 0)).slice(0, limit);
+  const batch = ids
+    ? repos.filter((x) => ids.includes(x.id)).slice(0, limit)
+    : repos.slice().sort((a, b) => (known.get(a.id)?.checked || 0) - (known.get(b.id)?.checked || 0)).slice(0, limit);
   const found = [], results = [];
   for (const { id, repo } of batch) {
     let latest = null;
@@ -47,7 +74,10 @@ export async function checkReleases(env, { limit = PER_RUN, fetchFeed = (url) =>
       .bind(id, repo, latest?.version ?? null, latest?.date ?? null, latest?.url ?? null, Date.now()).run();
     results.push({ id, version: latest?.version ?? null });
     // Only a change after the first look counts as news, so the first sweep doesn't post 100 releases.
-    if (latest && before && before.version && before.version !== latest.version) found.push({ id, repo, ...latest });
+    // A repo that had no release at its last look and has one now is news too (a dev's first release),
+    // as long as it is recent: an old release first seen after a failed check is not.
+    const recent = latest?.date && Date.parse(latest.date) > Date.now() - RECENT_DAYS * 864e5;
+    if (latest && before && before.version !== latest.version && (before.version || recent)) found.push({ id, repo, ...latest });
   }
   for (const r of found) await announce(env, r);
   return { checked: batch.length, found, results };
@@ -56,12 +86,22 @@ export async function checkReleases(env, { limit = PER_RUN, fetchFeed = (url) =>
 async function announce(env, release) {
   if (!env.BOT || !env.LISTING_SECRET) return;
   const row = await env.DB.prepare('SELECT discord FROM listings WHERE id = ?').bind(release.id).first();
-  const thread = /\/channels\/\d+\/(\d+)$/.exec(row?.discord || '')?.[1];
-  if (!thread) return;
+  const thread = /\/channels\/\d+\/(\d+)$/.exec(row?.discord || '')?.[1] || null;
+  // No Discord topic: the bot still announces it in #releases, by the mod's name.
+  let game = null;
+  if (!thread) {
+    try {
+      const mods = await (await env.ASSETS.fetch(new Request('https://coopanything.app/data/mods.json'))).json();
+      const m = mods.find((x) => x.id === release.id)
+        || (await env.DB.prepare('SELECT game, project FROM community WHERE id = ?').bind(release.id).first());
+      if (m) game = m.project && m.project !== m.game ? `${m.game}: ${m.project}` : m.game;
+    } catch { /* no name, no post */ }
+    if (!game) return;
+  }
   await env.BOT.fetch(new Request('https://bot/internal/release', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.LISTING_SECRET}` },
-    body: JSON.stringify({ thread, id: release.id, version: release.version, url: release.url }),
+    body: JSON.stringify({ thread, id: release.id, version: release.version, url: release.url, game }),
   })).catch(() => {});
 }
 

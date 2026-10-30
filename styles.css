@@ -1474,6 +1474,12 @@ dialog::backdrop { background: var(--backdrop); }
   background: var(--accent); color: var(--on-accent);
   font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em; vertical-align: 1px; white-space: nowrap;
 }
+.rv-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid currentColor; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em; vertical-align: 1px; white-space: nowrap;
+}
+.rv-badge--yes { color: #2e9e5b; }
+.rv-badge--no { color: #b7791f; }
 .d-ca { border-left: 3px solid var(--accent); }
 
 /* Made with Co-op Anything, as a filter in the dropdown row: the same pill at select height. */
@@ -1654,6 +1660,59 @@ select.ed-field { cursor: pointer; }
 .ed-tools .icon, .d-rate summary .icon, .ed-bar .icon { margin: 0; }
 .d-rate summary .icon { color: var(--warn); }
 
+/* Wanted games (/wanted/) */
+.wanted-controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
+.wanted-controls select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
+.wanted-request { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 8px; }
+.wanted-request p { margin: 0; }
+.wanted-found { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-width: 520px; }
+.wanted-pick { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); cursor: pointer; }
+.wanted-pick:hover { border-color: var(--accent, currentColor); }
+.wanted-pick img { border-radius: 4px; object-fit: cover; }
+.wanted-pick span:last-child { margin-left: auto; }
+.wanted-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.wanted-row { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.wanted-cover { width: 60px; height: 80px; flex: none; border-radius: 6px; object-fit: cover; background: var(--line); }
+.wanted-main { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.wanted-status { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.wanted-tag { font-size: .8rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted, inherit); }
+.wanted-tag--ok { border-color: #3a9a5b; color: #3a9a5b; }
+.wanted-tag--mod { border-color: #c98a12; color: #c98a12; }
+.wanted-vote { display: grid; justify-items: center; gap: 2px; min-width: 56px; padding: 8px 10px; font: inherit; font-weight: 600; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--fg); cursor: pointer; }
+.wanted-vote:hover { border-color: var(--accent, currentColor); }
+.wanted-vote.is-on { background: var(--accent, #4f6bff); border-color: var(--accent, #4f6bff); color: #fff; }
+
+.wanted-add { display: inline-flex; align-items: center; gap: 6px; }
+.wanted-request[hidden] { display: none; }
+
+.wanted-listed { font: inherit; font-size: .85rem; padding: 2px 8px; margin: 2px 4px 2px 0; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--fg); cursor: pointer; }
+.wanted-listed:hover { border-color: var(--accent, currentColor); }
+
+.wanted-title { font: inherit; font-weight: 700; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; text-decoration: none; }
+.wanted-title:hover { text-decoration: underline; }
+.wanted-card { width: min(640px, 94vw); max-height: 90vh; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); }
+.wanted-card::backdrop { background: rgba(0, 0, 0, .55); }
+.wanted-card__close { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+.wanted-card__head { display: flex; gap: 18px; align-items: flex-start; }
+.wanted-card__head img { border-radius: 8px; object-fit: cover; flex: none; max-width: 38%; height: auto; }
+.wanted-card__head h2 { margin: 0 0 4px; }
+.wanted-card__head p { margin: 4px 0; }
+.wanted-mods { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+@media (max-width: 520px) { .wanted-card__head { flex-direction: column; } .wanted-card__head img { max-width: 60%; } }
+
+.wanted-vote-row { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; }
+.more-wrap { text-align: center; margin: 16px 0 28px; }
+.wanted-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 100; max-width: min(520px, 92vw); padding: 10px 16px; border-radius: 12px; background: var(--fg); color: var(--bg); box-shadow: 0 6px 24px rgba(0,0,0,.3); font-size: .9rem; }
+.wanted-toast[hidden] { display: none; }
+.wanted-toast a { color: inherit; text-decoration: underline; }
+
+.sg-form { display: grid; gap: 12px; }
+.sg-form label { display: grid; gap: 4px; }
+.sg-form textarea { font: inherit; resize: vertical; max-width: none; }
+.sg-form input[type="url"] { max-width: none; }
+.sg-kind { display: grid; gap: 6px; border: 0; padding: 0; margin: 0; }
+.sg-kind label { display: flex; gap: 8px; align-items: center; }
+
 /* Plain links to every game page, so crawlers can reach them without running the table script. */
 .seo-index { padding-block: 8px 48px; color: var(--muted); }
 .seo-index h2 { font-size: 1.1rem; color: var(--fg); margin: 0 0 8px; }
@@ -1662,3 +1721,89 @@ select.ed-field { cursor: pointer; }
 .seo-index__list li { break-inside: avoid; padding: 2px 0; }
 .seo-index__list span { font-size: .75rem; }
 .seo-index summary { cursor: pointer; margin-bottom: 10px; }
+
+/* Couchlink: the header tab, the badge on game rows, and the /couchlink/ page. */
+:root { --cl-blue: #0a5cff; }
+.nav-link[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--accent); }
+.ca-badge.cl-badge { background: #0a5cff; color: #fff; text-decoration: none; }
+.ca-badge.cl-badge:hover { filter: brightness(1.12); }
+
+.cl-hero { display: flex; align-items: center; gap: 28px; }
+.cl-hero__mark { flex: none; width: 96px; height: 96px; }
+.cl-points { margin: 0; padding-left: 1.2em; max-width: 62ch; display: grid; gap: 4px; }
+.cl-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 6px; }
+.btn.cl-download { height: 52px; padding: 0 26px; font-size: 1.1rem; border-radius: 10px; }
+.cl-note { color: var(--muted); font-size: 0.9rem; }
+
+.cl-games { display: grid; gap: 14px; }
+.cl-games .gp-h2 { margin: 0; }
+.cl-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.85rem; color: var(--muted); }
+.cl-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.cl-controls .search { flex: 1 1 320px; }
+.cl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cl-chip {
+  display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px 0 8px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer;
+}
+.cl-chip:hover { border-color: var(--accent); }
+.cl-chip[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cl-chip__n { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.cl-tier {
+  display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.03em; white-space: nowrap; color: var(--c); border: 1.5px solid var(--c);
+}
+.cl-tier[data-tier="tested"] { --c: var(--ok); }
+.cl-tier[data-tier="recipe"] { --c: var(--cl-blue); }
+.cl-tier[data-tier="community"] { --c: var(--warn); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cl-tier[data-tier="recipe"] { --c: #6aa0ff; } }
+:root[data-theme="dark"] .cl-tier[data-tier="recipe"] { --c: #6aa0ff; }
+.card--static, .card--static:hover { cursor: default; border-color: var(--line); translate: none; }
+.cl-card[hidden] { display: none; }
+.cl-name { margin: 0; font: inherit; font-weight: 700; cursor: default; }
+.cl-name:hover { color: inherit; text-decoration: none; }
+.cl-notes { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.cl-links { justify-content: flex-start; gap: 6px 16px; }
+@media (max-width: 760px) {
+  .cl-hero { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .cl-hero__mark { width: 72px; height: 72px; }
+  .btn.cl-download { width: 100%; justify-content: center; }
+}
+
+/* The tab is text beside the other links; where they hide (under 1060px) it stays, as a round button with
+   the Couchlink mark, like Newsletter and Discord. */
+.nav-link--tab img { display: none; }
+@media (max-width: 1059px) {
+  .nav-link.nav-link--tab {
+    display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--bg);
+  }
+  .nav-link--tab:hover { text-decoration: none; border-color: var(--accent); }
+  .nav-link--tab[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .nav-link--tab img { display: block; width: 24px; height: 24px; }
+  .nav-link--tab span { display: none; }
+}
+/* The masthead grid's one column must not grow to the Latest releases strip's full length (it is 1300px wide at 768px). */
+.masthead { grid-template-columns: minmax(0, 1fr); }
+/* The extra round button needs the tagline's room on tablets. */
+@media (max-width: 900px) { .tagline { display: none; } }
+@media (max-width: 560px) {
+  .masthead__actions .nav-link--tab { width: 40px; height: 40px; }
+  /* Five round buttons no longer fit beside the wordmark at 320 to 375px: on every header they go on
+     their own row under it, spread across the width, so nothing scrolls sideways. */
+  .masthead__top { flex-wrap: wrap; row-gap: 12px; }
+  /* The "Made with Co-op Anything" switch keeps its text on one line, which is wider than a 320px phone. */
+  .sort-inline, .sort-pair { min-width: 0; }
+  .dir-btn { min-width: 0; max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sort-pair select { max-width: 100%; text-overflow: ellipsis; }
+  .spotlight--field { flex: 1 1 100%; min-width: 0; height: auto; min-height: 42px; padding-block: 4px; }
+  .spotlight--field .spotlight__text { flex-wrap: wrap; white-space: normal; gap: 0 7px; }
+  .masthead__actions, .masthead:not(.masthead--slim) .masthead__actions { display: flex; flex: 1 1 100%; justify-content: space-between; }
+}
+
+/* Couchlink list at 500+ games: a fixed 3:4 cover box (so late images move nothing) and cards that skip
+   layout and paint while off screen. */
+.cl-card .cover--md { width: 60px; height: 80px; border-radius: 4px; }
+.cl-card .cover--md img { object-fit: cover; }
+.cl-card .cover--md.cover--none { font-size: 1.4rem; }
+.cl-card { content-visibility: auto; contain-intrinsic-size: auto 190px; }
+.cl-card .card__main { min-height: 80px; }

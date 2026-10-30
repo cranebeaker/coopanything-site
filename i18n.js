@@ -50,6 +50,9 @@
     // header and navigation
     'a list of all co-op mods': 'список всех кооп-модов',
     'Make your own game co-op ↗': 'Сделай свою игру кооперативной ↗',
+    'Couchlink': 'Couchlink',
+    'Couchlink: play one game together on one PC, split-screen or one monitor each': 'Couchlink: играйте в одну игру вместе на одном ПК, на разделённом экране или на отдельных мониторах',
+    'You can play this one together on one PC with Couchlink': 'В эту игру можно играть вместе на одном ПК через Couchlink',
     'Join Discord': 'Наш Discord',
     'Submit a mod': 'Добавить мод',
     'Skip to search': 'К поиску',

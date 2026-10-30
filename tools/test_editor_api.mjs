@@ -17,10 +17,10 @@ const OTHER = JSON.parse(readFileSync('_site/data/mods.json', 'utf8')).find((m) 
 const far = Date.now() + 864e5;
 const seed = join(tmpdir(), 'coop-editor-test.sql');
 writeFileSync(seed, `DELETE FROM sessions WHERE id LIKE 'test-%'; DELETE FROM listings WHERE id IN ('${MOD}','${OTHER}');
-INSERT INTO sessions VALUES ('test-owner','${OWNER}','MJ',NULL,'[]',0,${far});
-INSERT INTO sessions VALUES ('test-dev','${DEV}','Dev',NULL,'["${ROLE}"]',0,${far});
-INSERT INTO sessions VALUES ('test-stranger','${STRANGER}','Nope',NULL,'[]',0,${far});
-INSERT INTO sessions VALUES ('test-assistant','500000000000000001','Helper',NULL,'["${ROLE}"]',0,${far});`);
+INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires) VALUES ('test-owner','${OWNER}','MJ',NULL,'[]',0,${far});
+INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires) VALUES ('test-dev','${DEV}','Dev',NULL,'["${ROLE}"]',0,${far});
+INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires) VALUES ('test-stranger','${STRANGER}','Nope',NULL,'[]',0,${far});
+INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires) VALUES ('test-assistant','500000000000000001','Helper',NULL,'["${ROLE}"]',0,${far});`);
 execSync(`npx wrangler d1 execute coop-haven --local --file "${seed}"`, { stdio: 'ignore' });
 
 let failed = 0;
@@ -55,13 +55,13 @@ check("dev can't edit another mod", (await edit('dev', { id: OTHER, summary: 'x'
 
 let r = await edit('dev', { id: MOD, summary: '## Hi\n**Bold** <script>alert(1)</script>', video: 'https://youtu.be/dQw4w9WgXcQ',
   website: 'https://example.org/mod', download: 'https://github.com/x/y/releases', players: '2-4', stage: 'beta', version: 'v0.5',
-  note: 'Saves sync now https://evil.example', sync: { story: 'yes', enemies: 'partial', world: '', items: 'no' } });
+  note: 'Saves sync now https://evil.example', sync: { see: 'yes', story: 'yes', enemies: 'partial', world: '', items: 'no' } });
 let l = await listing(MOD);
 check('dev saves everything', r.status === 200 && r.body.ok);
 check('video normalised to a YouTube watch link', l.video === 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 check('links, players, stage, version saved', l.website === 'https://example.org/mod' && l.download === 'https://github.com/x/y/releases' && l.players === '2-4' && l.stage === 'beta' && l.version === 'v0.5');
 check('note loses its link', l.note === 'Saves sync now');
-check('sync saved, blanks dropped', JSON.stringify(l.sync) === JSON.stringify({ story: 'yes', enemies: 'partial', items: 'no' }));
+check('sync saved, blanks dropped, see each other included', JSON.stringify(l.sync) === JSON.stringify({ see: 'yes', story: 'yes', enemies: 'partial', items: 'no' }));
 check('summary kept as text (escaped when shown)', l.summary.includes('<script>'));
 
 check('non-video site refused', (await edit('dev', { id: MOD, video: 'https://evil.example/v.mp4' })).status === 400);
@@ -73,6 +73,23 @@ check("editor can't change the Discord link", (await edit('dev', { id: MOD, disc
 r = await edit('dev', { id: MOD, clear: ['video', 'download', 'sync'] });
 l = await listing(MOD);
 check('clearing fields works', r.status === 200 && !l.video && !l.download && !l.sync && l.website);
+// The repository: the dev sets it on the site; only GitHub, GitLab or Codeberg owner/repo links are kept.
+r = await edit('dev', { id: MOD, repo: 'https://www.github.com/Dev-Name/My-Mod.git/' });
+check('dev sets the repository, tidied', r.status === 200 && (await listing(MOD)).repo === 'https://github.com/Dev-Name/My-Mod');
+check('repository on another host refused', (await edit('dev', { id: MOD, repo: 'https://evil.example/a/b' })).status === 400);
+check('repository that is not owner/repo refused', (await edit('dev', { id: MOD, repo: 'https://github.com/just-a-user' })).status === 400);
+check('repository over http refused', (await edit('dev', { id: MOD, repo: 'http://github.com/a/b' })).status === 400);
+check('a refused repository leaves the old one', (await listing(MOD)).repo === 'https://github.com/Dev-Name/My-Mod');
+check('stranger cannot change the repository', (await edit('stranger', { id: MOD, repo: 'https://github.com/a/b' })).status === 403);
+r = await edit('dev', { id: MOD, clear: ['repo'] });
+check('repository can be cleared', r.status === 200 && !(await listing(MOD)).repo);
+// The project type: a dev can say their project is a decomp port, but not claim an official mode.
+r = await edit('dev', { id: MOD, kind: 'decomp-port' });
+check('dev sets the project type', r.status === 200 && (await listing(MOD)).kind === 'decomp-port');
+check('unknown type refused', (await edit('dev', { id: MOD, kind: 'nonsense' })).status === 400);
+check('official type refused for a dev', (await edit('dev', { id: MOD, kind: 'official' })).status === 400);
+r = await edit('dev', { id: MOD, clear: ['kind'] });
+check('type can go back to as listed', r.status === 200 && !(await listing(MOD)).kind);
 check('owner edits a mod with no Dev role', (await edit('owner', { id: OTHER, summary: 'From MJ' })).status === 200 && (await listing(OTHER)).summary === 'From MJ');
 
 // Card details: cover link, own tier (S is the owner's), co-op %, engine, how you connect.

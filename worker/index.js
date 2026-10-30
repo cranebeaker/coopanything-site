@@ -17,7 +17,13 @@
 
 import { BadField, canEdit, checkFields, publicListing, save } from './listings.js';
 import { callback, login, logout, me, session } from './auth.js';
+import { createToken, guideText, listTokens, revokeToken, tokenUser } from './tokens.js';
 import { checkReleases, releaseMap } from './releases.js';
+import { wanted } from './wanted.js';
+import { communityIds, communityList, saveCommunity, reviewCommunity } from './community.js';
+import { handoffCommunity } from './handoff.js';
+import { edgeBust, edgeCached } from './edge.js';
+import { suggest } from './suggest.js';
 
 const CANONICAL_HOST = 'coopanything.app';
 
@@ -29,6 +35,9 @@ const STATS_TTL = 30_000;        // ms an isolate reuses /api/stats
 let idsCache = null;
 let statsCache = null;
 let saltCache = null;
+
+// A change (a vote, a listing edit) clears the cached stats here and at this data centre's edge.
+const bustStats = (url) => { statsCache = null; return edgeBust(url.origin, '/api/stats'); };
 
 const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(body), {
   status,
@@ -51,11 +60,16 @@ async function salt(env) {
 }
 
 // The project ids on the site (the build writes them to data/ids.json).
-async function knownIds(env, url) {
+async function directoryIds(env, url) {
   if (idsCache) return idsCache;
   const res = await env.ASSETS.fetch(new Request(new URL('/data/ids.json', url)));
   idsCache = res.ok ? new Set(await res.json()) : new Set();
   return idsCache;
+}
+
+// The directory's ids plus the mods their devs listed themselves (worker/community.js).
+async function knownIds(env, url) {
+  return new Set([...(await directoryIds(env, url)), ...(await communityIds(env))]);
 }
 
 async function who(request, env) {
@@ -92,19 +106,39 @@ function shape(row, outcomes, visits) {
   };
 }
 
+// Visitors per project over the Trending window. Counting them scans the hits table, which once ate
+// most of D1's daily free reads when it ran on every page view, so the answer is kept in the config
+// table and recomputed at most every 30 minutes.
+const VISITS_TTL = 30 * 60_000;
+async function visitCounts(env) {
+  const row = await env.DB.prepare("SELECT v FROM config WHERE k = 'visits'").first();
+  if (row) {
+    try {
+      const saved = JSON.parse(row.v);
+      if (Date.now() - saved.at < VISITS_TTL) return saved.data;
+    } catch { /* recompute */ }
+  }
+  const since = new Date(Date.now() - (VISIT_DAYS - 1) * 864e5).toISOString().slice(0, 10);
+  const rows = (await env.DB.prepare('SELECT id, SUM(n) AS c FROM visit_counts WHERE day >= ? GROUP BY id').bind(since).all()).results;
+  const data = Object.fromEntries(rows.map((r) => [r.id, r.c]));
+  await env.DB.prepare("INSERT INTO config (k, v) VALUES ('visits', ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v")
+    .bind(JSON.stringify({ at: Date.now(), data })).run();
+  // Visits older than the window are dropped here, once per recompute (not on page views).
+  const cutoff = new Date(Date.now() - 8 * 864e5).toISOString().slice(0, 10);
+  await env.DB.prepare('DELETE FROM visit_counts WHERE day < ?').bind(cutoff).run();
+  return data;
+}
 async function allStats(env) {
   if (statsCache && Date.now() - statsCache.at < STATS_TTL) return statsCache.body;
-  const since = new Date(Date.now() - (VISIT_DAYS - 1) * 864e5).toISOString().slice(0, 10);
-  const [votes, outs, hits, lists] = await env.DB.batch([
+  const [votes, outs, lists] = await env.DB.batch([
     env.DB.prepare(`SELECT id, COUNT(*) AS n, AVG(score) AS score, COUNT(score) AS scoreN,
       AVG(pct) AS pct, COUNT(pct) AS pctN FROM votes GROUP BY id`),
     env.DB.prepare('SELECT id, outcome, COUNT(*) AS c FROM votes WHERE outcome IS NOT NULL GROUP BY id, outcome'),
-    env.DB.prepare('SELECT id, COUNT(DISTINCT voter) AS c FROM hits WHERE day >= ? GROUP BY id').bind(since),
     env.DB.prepare('SELECT * FROM listings'),
   ]);
   const outcomes = {};
   for (const r of outs.results) (outcomes[r.id] ||= {})[r.outcome] = r.c;
-  const visits = Object.fromEntries(hits.results.map((r) => [r.id, r.c]));
+  const visits = await visitCounts(env);
   const stats = {};
   for (const r of votes.results) stats[r.id] = shape(r, outcomes[r.id], visits[r.id]);
   for (const [id, c] of Object.entries(visits)) if (!stats[id]) stats[id] = shape(null, null, c);
@@ -118,7 +152,7 @@ async function allStats(env) {
       if (r.url) l.releaseUrl = r.url;
     }
   }
-  const body = { stats, listings, generated: new Date().toISOString() };
+  const body = { stats, listings, community: await communityList(env), generated: new Date().toISOString() };
   statsCache = { at: Date.now(), body };
   return body;
 }
@@ -165,7 +199,7 @@ async function vote(request, env, url) {
         iph = excluded.iph,
         updated = excluded.updated`)
     .bind(body.id, voter, iph, pct, score, outcome, now).run();
-  statsCache = null;
+  await bustStats(url);
   return json({ ok: true, stats: await oneStats(env, body.id) });
 }
 
@@ -175,14 +209,9 @@ async function hit(request, env, url) {
   if (!body || typeof body.id !== 'string') return new Response(null, { status: 204 });
   const ids = await knownIds(env, url);
   if (!ids.has(body.id)) return new Response(null, { status: 204 });
-  const { voter } = await who(request, env);
+  // One counter row per project per day (the page sends at most one hit per project per browser session).
   const day = new Date().toISOString().slice(0, 10);
-  await env.DB.prepare('INSERT OR IGNORE INTO hits (id, day, voter) VALUES (?, ?, ?)').bind(body.id, day, voter).run();
-  // Now and then, drop visits older than the Trending window.
-  if (Math.random() < 0.02) {
-    const cutoff = new Date(Date.now() - 8 * 864e5).toISOString().slice(0, 10);
-    await env.DB.prepare('DELETE FROM hits WHERE day < ?').bind(cutoff).run();
-  }
+  await env.DB.prepare('INSERT INTO visit_counts (id, day, n) VALUES (?, ?, 1) ON CONFLICT (id, day) DO UPDATE SET n = n + 1').bind(body.id, day).run();
   return new Response(null, { status: 204 });
 }
 
@@ -203,7 +232,7 @@ async function listing(request, env, url) {
   if (!(await knownIds(env, url)).has(body.id)) return json({ ok: false, error: 'That mod isn’t on the site.' }, 404);
   try {
     const row = await save(env, body.id, checkFields(body, { fromBot: true, owner: body.as_owner === true }), body.by);
-    statsCache = null;
+    await bustStats(url);
     return json({ ok: true, listing: { ...publicListing(row), devRole: row.dev_role || null } });
   } catch (e) {
     if (e instanceof BadField) return json({ ok: false, error: e.message }, 400);
@@ -213,10 +242,18 @@ async function listing(request, env, url) {
 
 const EDITS_PER_HOUR = 60;
 
+// A logged-in person (cookie) or a personal API token (Authorization: Bearer ca_...).
+const bearer = (request) => /^Bearer (ca_[0-9a-f]{48})$/.exec(request.headers.get('Authorization') || '')?.[1] || null;
+async function actor(request, env) {
+  const token = bearer(request);
+  return token ? tokenUser(env, token) : session(request, env);
+}
+
 async function editListing(request, env, url) {
-  if (!sameOrigin(request, url)) return json({ ok: false, error: 'Edits are only taken from the site itself.' }, 403);
-  const who = await session(request, env);
-  if (!who) return json({ ok: false, error: 'Log in with Discord first.' }, 401);
+  const viaToken = !!bearer(request);
+  if (!viaToken && !sameOrigin(request, url)) return json({ ok: false, error: 'Edits are only taken from the site itself.' }, 403);
+  const who = await actor(request, env);
+  if (!who) return json({ ok: false, error: viaToken ? 'That token is not valid. It may have expired or been removed.' : 'Log in with Discord first.' }, 401);
   const body = await readBody(request, 10000);
   if (!body || typeof body.id !== 'string') return json({ ok: false, error: 'Bad request.' }, 400);
   if (!(await knownIds(env, url)).has(body.id)) return json({ ok: false, error: 'That mod isn’t on the site.' }, 404);
@@ -227,7 +264,7 @@ async function editListing(request, env, url) {
   if (recent.c >= EDITS_PER_HOUR) return json({ ok: false, error: 'That’s a lot of edits. Try again in an hour.' }, 429);
   try {
     const saved = await save(env, body.id, checkFields(body, { fromBot: false, owner: who.owner }), `web:${who.userId}`);
-    statsCache = null;
+    await bustStats(url);
     return json({ ok: true, listing: publicListing(saved) });
   } catch (e) {
     if (e instanceof BadField) return json({ ok: false, error: e.message }, 400);
@@ -236,12 +273,50 @@ async function editListing(request, env, url) {
 }
 
 // Which listings this login can edit (the site shows an Edit button on those).
+async function editableIds(env, who) {
+  const rows = await env.DB.prepare('SELECT id, dev_role, leads FROM listings WHERE dev_role IS NOT NULL OR leads IS NOT NULL').all();
+  return rows.results.filter((r) => canEdit(r, who)).map((r) => r.id);
+}
+
 async function myListings(request, env) {
   const who = await session(request, env);
   if (!who) return json({ ids: [] });
   if (who.owner) return json({ ids: '*' });
-  const rows = await env.DB.prepare('SELECT id, dev_role, leads FROM listings WHERE dev_role IS NOT NULL OR leads IS NOT NULL').all();
-  return json({ ids: rows.results.filter((r) => canEdit(r, who)).map((r) => r.id) });
+  return json({ ids: await editableIds(env, who) });
+}
+
+// What an AI sees: the listings its token can edit, with their names and what is set now.
+async function apiMe(request, env, url) {
+  const who = await actor(request, env);
+  if (!who) return json({ ok: false, error: 'That token is not valid. It may have expired or been removed.' }, 401);
+  const ids = await editableIds(env, who);
+  const names = new Map();
+  try { for (const m of await (await env.ASSETS.fetch(new Request(new URL('/data/mods.json', url)))).json()) names.set(m.id, m); } catch { /* names are optional */ }
+  for (const c of await communityList(env)) if (!names.has(c.id)) names.set(c.id, c);
+  const out = [];
+  for (const id of ids.slice(0, 50)) {
+    const row = await env.DB.prepare('SELECT * FROM listings WHERE id = ?').bind(id).first();
+    out.push({ id, game: names.get(id)?.game || null, project: names.get(id)?.project || null, current: row ? publicListing(row) : {} });
+  }
+  return json({ ok: true, listings: out });
+}
+
+// Making and removing tokens needs a real Discord login on the site itself, never another token.
+async function tokenAdmin(request, env, url) {
+  if (bearer(request)) return json({ ok: false, error: 'Tokens are managed on the site, logged in with Discord.' }, 403);
+  const who = await session(request, env);
+  if (!who) return json({ ok: false, error: 'Log in with Discord first.' }, 401);
+  if (request.method === 'GET') return json({ ok: true, tokens: await listTokens(env, who) });
+  if (!sameOrigin(request, url)) return json({ ok: false, error: 'Only from the site itself.' }, 403);
+  const body = await readBody(request, 500);
+  if (!body) return json({ ok: false, error: 'Bad request.' }, 400);
+  try {
+    if (url.pathname === '/api/tokens/revoke') { await revokeToken(env, who, body.id); return json({ ok: true }); }
+    if (!who.owner && !(await editableIds(env, who)).length) return json({ ok: false, error: 'Tokens are for devs. Get your Dev role and link your topic first.' }, 403);
+    return json({ ok: true, ...(await createToken(env, who, body.label)) });
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 400);
+  }
 }
 
 // ?lang=ru pages: i18n.js translates them in the browser, but link previews (Discord, Reddit) read
@@ -269,33 +344,71 @@ async function page(request, env, url) {
 export default {
   // The release check (worker/releases.js) runs on the cron in wrangler.jsonc.
   async scheduled(event, env, ctx) {
+    ctx.waitUntil(handoffCommunity(env).then((r) => { if (r.moved.length) console.log('handoff', JSON.stringify(r)); }).catch((e) => console.error(e)));
     ctx.waitUntil(checkReleases(env).then((r) => console.log('releases', JSON.stringify(r))).catch((e) => console.error(e)));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     // One address for search engines and logins: everything but the API moves to coopanything.app.
     const oldHost = url.hostname === `www.${CANONICAL_HOST}` || url.hostname.endsWith('.workers.dev');
     if (oldHost && !url.pathname.startsWith('/api/')) {
       return Response.redirect(`https://${CANONICAL_HOST}${url.pathname}${url.search}`, 301);
     }
+    // The Wanted list lives on the home page now (the Wanted filter).
+    if (url.pathname === '/wanted' || url.pathname === '/wanted/') return Response.redirect(`${url.origin}/?stage=wanted`, 301);
     try {
       if (url.pathname === '/auth/login') return await login(request, env, url);
       if (url.pathname === '/auth/callback') return await callback(request, env, url);
       if (url.pathname === '/auth/logout' && request.method === 'POST') return await logout(request, env);
       if (!url.pathname.startsWith('/api/')) return page(request, env, url);
       if (url.pathname === '/api/stats' && request.method === 'GET') {
-        return json(await allStats(env), 200, { 'Cache-Control': 'public, max-age=30' });
+        return await edgeCached(request, 300, async () => json(await allStats(env), 200, { 'Cache-Control': 'public, max-age=300' }));
       }
       if (url.pathname === '/api/vote' && request.method === 'POST') return await vote(request, env, url);
       if (url.pathname === '/api/hit' && request.method === 'POST') return await hit(request, env, url);
       if (url.pathname === '/api/listing' && request.method === 'POST') return await listing(request, env, url);
+      if (url.pathname === '/api/community' && request.method === 'POST') {
+        if (!sameSecret((request.headers.get('Authorization') || '').replace(/^Bearer /, ''), env.LISTING_SECRET)) return json({ ok: false, error: 'Not allowed.' }, 403);
+        const body = await readBody(request, 4000);
+        if (!body) return json({ ok: false, error: 'Bad request.' }, 400);
+        try {
+          const out = await saveCommunity(env, body, await directoryIds(env, url));
+          await bustStats(url);
+          return json({ ok: true, ...out });
+        } catch (e) {
+          return json({ ok: false, error: e.message }, 400);
+        }
+      }
+      if (url.pathname === '/api/community/review' && request.method === 'POST') {
+        if (!sameSecret((request.headers.get('Authorization') || '').replace(/^Bearer /, ''), env.LISTING_SECRET)) return json({ ok: false, error: 'Not allowed.' }, 403);
+        const body = await readBody(request, 1000);
+        if (!body || typeof body.id !== 'string') return json({ ok: false, error: 'Bad request.' }, 400);
+        try {
+          const out = await reviewCommunity(env, body.id, body.action);
+          await bustStats(url);
+          return json({ ok: true, ...out });
+        } catch (e) {
+          return json({ ok: false, error: e.message }, 400);
+        }
+      }
       if (url.pathname === '/api/releases/check' && request.method === 'POST') {
         if (!sameSecret((request.headers.get('Authorization') || '').replace(/^Bearer /, ''), env.LISTING_SECRET)) return json({ ok: false, error: 'Not allowed.' }, 403);
-        const out = await checkReleases(env, { limit: Math.min(Number(url.searchParams.get('limit')) || 20, 40) });
-        statsCache = null;
+        // ?id=<mod id>[,<mod id>] checks just those mods now.
+        const only = (url.searchParams.get('id') || '').split(',').map((s) => s.trim()).filter(Boolean);
+        const out = await checkReleases(env, { limit: Math.min(Number(url.searchParams.get('limit')) || 20, 40), ids: only.length ? only : null });
+        await bustStats(url);
         return json({ ok: true, ...out });
       }
       if (url.pathname === '/api/listing/edit' && request.method === 'POST') return await editListing(request, env, url);
+      if (url.pathname === '/api/v1/listing' && request.method === 'POST') return await editListing(request, env, url);
+      if (url.pathname === '/api/v1/me' && request.method === 'GET') return await apiMe(request, env, url);
+      if (url.pathname === '/api/tokens' && ['GET', 'POST'].includes(request.method)) return await tokenAdmin(request, env, url);
+      if (url.pathname === '/api/tokens/revoke' && request.method === 'POST') return await tokenAdmin(request, env, url);
+      if (url.pathname === '/api/guide' && request.method === 'GET') return new Response(guideText(url.origin), { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' } });
+      const w = await wanted(request, env, url);
+      if (w) return w;
+      const sg = await suggest(request, env, url, ctx);
+      if (sg) return sg;
       if (url.pathname === '/api/me' && request.method === 'GET') return await me(request, env);
       if (url.pathname === '/api/my-listings' && request.method === 'GET') return await myListings(request, env);
       return json({ ok: false, error: 'Not found.' }, 404);

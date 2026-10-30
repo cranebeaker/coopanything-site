@@ -78,6 +78,7 @@
   const countVisit = (id) => {
     if (!apiOn || counted.has(id)) return;
     counted.add(id);
+    try { if (sessionStorage.getItem(`rh-hit:${id}`)) return; sessionStorage.setItem(`rh-hit:${id}`, '1'); } catch { /* no storage: count it */ }
     try { navigator.sendBeacon(`${API}/hit`, JSON.stringify({ id })); } catch { /* no beacon */ }
   };
   document.addEventListener('click', (ev) => {

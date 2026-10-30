@@ -65,8 +65,8 @@ window.RECOMPHAVEN_TABLES = {
   },
   "wanted": {
    "label": "Wanted",
-   "blurb": "No co-op mod yet",
-   "long": "Nobody has made this game co-op yet, as far as anyone has found. Up for grabs."
+   "blurb": "Vote for what is next",
+   "long": "Games people want to play together, most wanted first. Most have no co-op mod yet, as far as anyone has found. Press the arrow on a game to vote for it."
   }
  },
  "tiers": {

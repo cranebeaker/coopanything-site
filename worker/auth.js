@@ -67,12 +67,14 @@ export async function callback(request, env, url) {
   const auth = { Authorization: `Bearer ${token}` };
   const user = await (await fetch(`${API}/users/@me`, { headers: auth })).json();
   const memberRes = await fetch(`${API}/users/@me/guilds/${env.GUILD_ID}/member`, { headers: auth });
-  const roles = memberRes.ok ? (await memberRes.json()).roles || [] : [];
+  const memberInfo = memberRes.ok ? await memberRes.json() : null;
+  const roles = memberInfo?.roles || [];
+  const joined = memberInfo?.joined_at ? Date.parse(memberInfo.joined_at) : null;
 
   const id = randomId();
   const now = Date.now();
-  await env.DB.prepare('INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, user.id, user.global_name || user.username, user.avatar || null, JSON.stringify(roles), now, now + DAYS * 864e5).run();
+  await env.DB.prepare('INSERT INTO sessions (id, user_id, name, avatar, roles, created, expires, member, joined) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, user.id, user.global_name || user.username, user.avatar || null, JSON.stringify(roles), now, now + DAYS * 864e5, memberInfo ? 1 : 0, joined).run();
   if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM sessions WHERE expires < ?').bind(now).run();
   return redirect(safeReturn(back), [clearState, ['Set-Cookie', cookie(COOKIE, id, DAYS * 86400)]]);
 }
@@ -90,7 +92,7 @@ export async function session(request, env) {
   if (!id) return null;
   const row = await env.DB.prepare('SELECT * FROM sessions WHERE id = ? AND expires > ?').bind(id, Date.now()).first();
   if (!row) return null;
-  return { userId: row.user_id, name: row.name, avatar: row.avatar, roles: JSON.parse(row.roles || '[]'), owner: row.user_id === env.OWNER_ID };
+  return { userId: row.user_id, name: row.name, avatar: row.avatar, roles: JSON.parse(row.roles || '[]'), owner: row.user_id === env.OWNER_ID, member: row.member === 1, joined: row.joined };
 }
 
 export async function me(request, env) {

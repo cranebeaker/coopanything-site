@@ -25,87 +25,89 @@
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="home.css">
 </head>
-<body>
+<body class="home">
 <a class="skip" href="#q">Skip to search</a>
 
-<header class="masthead">
-  <div class="wrap masthead__top">
-    <div class="brand">
-      <h1 class="wordmark"><img src="assets/logo.png" alt="CoOp:Anything" width="2074" height="370"></h1>
-      <p class="tagline">a list of all co-op mods</p>
-    </div>
-    <div class="masthead__actions">
-      <a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
-      <a class="submit-btn feedback-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord">
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.49 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.7 19.7 0 0 0-4.88 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42Z"/></svg>
-        <span>Join Discord</span>
-      </a>
-      <a class="submit-btn" href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        <span>Submit a mod</span>
-      </a>
-      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
-        <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
-        <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
-      </button>
-    </div>
-  </div>
-  <div class="wrap">
-    <div id="stage-tiles" class="stage-tiles" role="group" aria-label="Filter by stage"></div>
-  </div>
-  <!-- feed.xml and releases/ are made by tools/build_pages.py, so they only exist on the built site. -->
-  <div class="wrap pulse" aria-label="Latest releases">
-    <div class="pulse__strip">
-      <h2 class="pulse__label">Latest releases</h2>
-      <ol id="latest-list" class="pulse__list"></ol>
-      <a class="pulse__link" href="releases/">All releases →</a>
-    </div>
+<div class="shell">
+<div class="content">
+
+<header class="nav">
+  <a class="nav__brand" href="./" aria-label="Co-op Anything, home">
+    <svg class="rings" viewBox="0 0 28 28" width="30" height="30" fill="none" stroke-width="3" aria-hidden="true"><circle cx="10.5" cy="14" r="7" stroke="#0a5cff"/><circle cx="17.5" cy="14" r="7" stroke="#5ac8fa"/></svg>
+    <span>Co-op Anything</span>
+  </a>
+  <nav class="nav__links" aria-label="More">
+    <a href="./?stage=wanted#results">Wanted</a>
+    <a href="couchlink/">Couchlink</a>
+    <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op</a>
+    <a href="releases/">Releases</a>
+  </nav>
+  <div class="topbar masthead__actions">
+    <a class="top-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord"><span>Join Discord</span></a>
+    <a class="top-btn top-btn--primary" href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)"><span>Submit a mod</span></a>
+    <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
+      <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
+    </button>
   </div>
 </header>
 
-<main>
-  <section class="controls" aria-label="Search, filter and sort">
-    <div class="wrap controls__inner">
-      <div class="search search--hero">
-        <label for="q" class="sr-only">Search for a game</label>
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="q" type="search" placeholder="Can I play it with friends? Search any game: Skyrim, Deus Ex, Zelda..." autocomplete="off" spellcheck="false">
-        <kbd class="search__key" aria-hidden="true">/</kbd>
-      </div>
-      <div class="controls__row">
-        <label class="field"><span>Kind</span><select id="f-console"></select></label>
-        <label class="field"><span>Engine</span><select id="f-genre"></select></label>
-        <label class="field"><span>Quality</span><select id="f-quality"></select></label>
-        <label class="field"><span>How you connect</span><select id="f-toolchain"></select></label>
-        <button id="ca-toggle" class="spotlight spotlight--field" type="button" aria-pressed="false" title="Show only the mods made with Co-op Anything, the open playbook for making any single-player game co-op with an AI agent">
-          <span class="spotlight__mark" aria-hidden="true">Co:</span>
-          <span class="spotlight__text"><strong>Made with Co-op Anything</strong><span id="ca-count"></span></span>
-          <span class="spotlight__switch" aria-hidden="true"></span>
-        </button>
-      </div>
-    </div>
-  </section>
+<section class="hero" aria-label="Search">
+  <h1 class="hero__title">Can I play it <span>with friends?</span></h1>
+  <div class="search search--hero">
+    <label for="q" class="sr-only">Search for a game</label>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="Search any game: Skyrim, Deus Ex, Zelda" autocomplete="off" spellcheck="false">
+    <kbd class="search__key" aria-hidden="true">/</kbd>
+  </div>
+  <div id="stage-tiles" class="stage-tiles" role="group" aria-label="Filter by stage"></div>
+</section>
 
+<!-- feed.xml and releases/ are made by tools/build_pages.py, so they only exist on the built site. -->
+<div class="pulse" aria-label="Latest releases">
+  <div class="pulse__strip">
+    <h2 class="pulse__label">Latest releases</h2>
+    <ol id="latest-list" class="pulse__list"></ol>
+    <a class="pulse__link" href="releases/">All releases →</a>
+  </div>
+</div>
+
+<main>
   <section id="results" class="wrap results" tabindex="-1" aria-label="Co-op mods">
     <div class="results__bar">
       <p id="count" class="count" aria-live="polite"></p>
       <div class="results__actions">
+        <button id="cl-toggle" class="chip-btn chip-btn--cl" type="button" aria-pressed="false" title="Show only the games you can play together on one PC with Couchlink"><svg viewBox="0 0 96 96" width="18" height="18" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="24" y="21" width="52" height="36" rx="18"/><rect x="11" y="42" width="78" height="30" rx="15"/></svg><span>Works with Couchlink</span></button>
+        <button id="filters-toggle" class="chip-btn" type="button" aria-expanded="false" aria-controls="filters-panel"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filters</span></button>
+        <button id="add-game" class="btn wanted-add" type="button" title="Add a game you want a co-op mod for, then vote on it">+ Add a game</button>
         <button id="reset" class="text-btn" type="button">Clear filters</button>
         <div class="sort-inline">
-          <label for="sort">Sort by</label>
+          <label for="sort">Sort</label>
           <div class="sort-pair">
             <select id="sort"></select>
             <button id="sort-dir" class="dir-btn" type="button"></button>
           </div>
         </div>
         <div class="segmented" role="group" aria-label="Layout">
-          <button type="button" data-view="table" aria-pressed="true">Table</button>
-          <button type="button" data-view="cards" aria-pressed="false">Cards</button>
+          <button type="button" data-view="cards" aria-pressed="true">Posters</button>
+          <button type="button" data-view="table" aria-pressed="false">Table</button>
         </div>
       </div>
+    </div>
+
+    <div id="filters-panel" class="filters-panel" hidden>
+      <label class="field"><span>Kind</span><select id="f-console"></select></label>
+      <label class="field"><span>Engine</span><select id="f-genre"></select></label>
+      <label class="field"><span>Quality</span><select id="f-quality"></select></label>
+      <label class="field"><span>How you connect</span><select id="f-toolchain"></select></label>
+      <button id="ca-toggle" class="spotlight spotlight--field" type="button" aria-pressed="false" title="Show only the mods made with Co-op Anything, the open playbook for making any single-player game co-op with an AI agent">
+        <span class="spotlight__text"><strong>Made with Co-op Anything</strong><span id="ca-count"></span></span>
+        <span class="spotlight__switch" aria-hidden="true"></span>
+      </button>
     </div>
 
     <div id="table-view" class="table-wrap">
@@ -129,6 +131,7 @@
     </div>
 
     <div id="card-view" class="cards" hidden></div>
+    <p id="more-wrap" class="more-wrap" hidden><button id="more" class="btn btn--ghost" type="button">Show more</button></p>
 
     <div id="empty" class="empty" hidden>
       <p class="empty__title">No co-op mods match.</p>
@@ -168,6 +171,30 @@
   <p>CoOp:Anything is built on <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">Recomp Haven</a> by rikuwru (MIT License), and like it, with AI help. Every mod listed needs your own copy of the game; CoOp:Anything links to projects and hosts no game files. Box art belongs to each game's publisher.</p>
   <p>Data snapshot <time id="snapshot"></time>.</p>
 </footer>
+
+</div>
+</div>
+
+<template id="cl-band-tpl">
+  <section class="cl-band" aria-labelledby="cl-band-h">
+    <div class="cl-band__text">
+      <div class="cl-band__eyebrow"><img src="assets/couchlink/couchlink-mark.svg" alt="" width="28" height="28"><span>Couchlink</span></div>
+      <h2 id="cl-band-h">Play any of these on one PC.</h2>
+      <p>Couchlink is the launcher for Co-op Anything. It starts a copy of the game for each player, up to eight, and keeps their controllers, names and saves apart.</p>
+      <div class="cl-band__cta"><a class="cl-band__btn" href="couchlink/">Get Couchlink</a><a href="couchlink/">Learn more ›</a></div>
+      <ol class="cl-band__steps">
+        <li><span class="cl-step cl-step--1">1</span><div><strong>Pick a game</strong><span>Any game with a Couchlink tag on this page.</span></div></li>
+        <li><span class="cl-step cl-step--2">2</span><div><strong>Press a button to join</strong><span>Each player takes a seat with their own controller, or keyboard and mouse.</span></div></li>
+        <li><span class="cl-step cl-step--3">3</span><div><strong>Split the screen</strong><span>Share one screen, or give every player a whole monitor.</span></div></li>
+        <li><span class="cl-step cl-step--4">4</span><div><strong>Play</strong><span>When you quit, Couchlink puts your PC back the way it was.</span></div></li>
+      </ol>
+    </div>
+    <div class="cl-band__shots">
+      <img class="cl-shot cl-shot--back" src="assets/couchlink/shot-players.png" alt="Couchlink's Players screen, with two players seated: Maya on a controller and Theo on a controller" width="1180" height="780" loading="lazy" decoding="async">
+      <img class="cl-shot cl-shot--front" src="assets/couchlink/shot-screens.png" alt="Couchlink's Screens screen, with the two players side by side on one monitor" width="1180" height="780" loading="lazy" decoding="async">
+    </div>
+  </section>
+</template>
 
 <dialog id="detail" aria-labelledby="d-title">
   <div class="d-body" id="d-body"></div>

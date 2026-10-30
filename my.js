@@ -16,7 +16,9 @@
       fetch(`${root}data/mods.json`).then((r) => r.json()),
       fetch('/api/stats').then((r) => r.json()).catch(() => ({})),
     ]);
-    mods = m; listings = s.listings || {};
+    // Mods their devs listed themselves with /listing add count too (they have no game page).
+    mods = m.concat((s.community || []).map((c) => ({ id: c.id, game: c.game, project: c.project, urls: [c.url], community: true })));
+    listings = s.listings || {};
   }
 
   const row = (m) => {
@@ -27,7 +29,7 @@
         ${bits.length ? `<span class="small muted">${esc(bits.join(' · '))}</span>` : ''}</div>
       <div class="my-row__actions">
         <a class="btn btn--ghost" href="${root}#${encodeURIComponent(m.id)}">View</a>
-        <a class="btn btn--ghost" href="${root}games/${slugOf(m.game)}/">Game page</a>
+        ${m.community ? '' : `<a class="btn btn--ghost" href="${root}games/${slugOf(m.game)}/">Game page</a>`}
         <a class="btn" href="${root}?edit=${encodeURIComponent(m.id)}#${encodeURIComponent(m.id)}"><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Edit</a>
       </div></li>`;
   };
@@ -65,6 +67,50 @@
     if (m) window.COOP_EDITOR.open({ id: m.id, title: m.game, project: m.project }, listings[m.id], async () => { await load(); render(); });
   });
 
-  const start = async () => { await load(); render(); };
+  // AI access: personal tokens a dev can give their AI assistant (worker/tokens.js). The token is shown once.
+  const ai = document.getElementById('my-ai');
+  const when = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'never');
+  const promptFor = (token) => `Read ${location.origin}/api/guide and use it to edit my CoOp:Anything listings. My token is ${token}. Keep it secret: never print it back, save it to a file or send it anywhere except ${location.origin}. Only state facts I told you or you checked in my repo, and ask me when you are unsure.`;
+
+  async function renderAi(fresh) {
+    if (!ai) return;
+    const acc = window.COOP_ACCOUNT;
+    if (!acc.user || (acc.ids !== '*' && !acc.ids.length)) { ai.innerHTML = ''; return; }
+    const out = await fetch('/api/tokens', { credentials: 'same-origin' }).then((r) => r.json()).catch(() => ({}));
+    const tokens = out.ok ? out.tokens : [];
+    ai.innerHTML = `
+      <h2 class="gp-h2">Let your AI edit your listings</h2>
+      <p>Make a personal token and give it to your AI assistant (Claude, ChatGPT, or anything that can make web requests). It can edit only the listings you can, with the same rules as the Edit listing panel, and never owner-only things. Treat it like a password: remove it here any time. Tokens stop working after 90 days.</p>
+      ${fresh ? `<div class="my-row" style="display:block"><p><strong>Your new token (shown once).</strong> Paste this to your AI:</p>
+        <textarea readonly rows="5" style="width:100%" id="ai-prompt">${esc(promptFor(fresh.token))}</textarea>
+        <p><button class="btn" type="button" data-ai-copy>Copy</button> <span class="small muted" id="ai-copied"></span></p></div>` : ''}
+      ${tokens.length ? `<ul class="my-list">${tokens.map((t) => `<li class="my-row"><div class="my-row__main"><strong>${esc(t.label || 'Token')}</strong>
+        <span class="small muted">${esc(t.prefix)}... made ${esc(when(t.created))}, last used ${esc(when(t.last_used))}, expires ${esc(when(t.expires))}</span></div>
+        <div class="my-row__actions"><button class="btn btn--ghost" type="button" data-ai-remove="${t.id}">Remove</button></div></li>`).join('')}</ul>` : '<p class="muted">No tokens yet.</p>'}
+      <form id="ai-form" class="my-ai-form"><input name="label" maxlength="40" placeholder="Name (for example: my Claude)" aria-label="Token name">
+        <button class="btn" type="submit">Create token</button> <span class="small muted" id="ai-status"></span></form>`;
+  }
+
+  ai?.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const status = document.getElementById('ai-status');
+    const res = await fetch('/api/tokens', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label: ev.target.elements.label.value }) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out.ok) { status.textContent = out.error || 'Could not make a token.'; return; }
+    renderAi(out);
+  });
+  ai?.addEventListener('click', async (ev) => {
+    const rm = ev.target.closest('[data-ai-remove]');
+    if (rm) {
+      await fetch('/api/tokens/revoke', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: Number(rm.dataset.aiRemove) }) });
+      renderAi();
+    }
+    if (ev.target.closest('[data-ai-copy]')) {
+      const box = document.getElementById('ai-prompt');
+      try { await navigator.clipboard.writeText(box.value); document.getElementById('ai-copied').textContent = 'Copied.'; } catch { box.select(); document.getElementById('ai-copied').textContent = 'Press Ctrl+C to copy.'; }
+    }
+  });
+
+  const start = async () => { await load(); render(); renderAi(); };
   if (window.COOP_ACCOUNT?.ready) start(); else window.addEventListener('coop:account', start, { once: true });
 })();

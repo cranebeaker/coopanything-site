@@ -24,3 +24,6 @@ node_modules/
 
 # Crash dumps
 *.stackdump
+
+# local SearXNG settings hold a generated secret
+tools/searxng/settings.yml

@@ -71,6 +71,19 @@ for (const row of t.releases.values()) row.checked = row.id === 'mod-2' ? 0 : Da
 out = await checkReleases(t.env, { limit: 1, fetchFeed });
 check('no Discord topic: found, but nothing posted', out.found.length === 1 && t.posts.length === 1);
 
+// A dev's first release: the repo had none at its last look. Recent counts as news; an old one does not.
+const today = new Date().toISOString().slice(0, 10);
+const firstFeed = (date) => async (url) => (url.includes('dev/mod-4') ? new Response(feed(entry('v0.1.0-alpha', date))) : fetchFeed(url));
+for (const row of t.releases.values()) row.checked = row.id === 'mod-4' ? 0 : Date.now();
+out = await checkReleases(t.env, { limit: 1, fetchFeed: firstFeed('2026-10-01') });
+check('an old release first seen later is not news', out.found.length === 0 && t.releases.get('mod-4').version === 'v0.1.0-alpha');
+t.releases.get('mod-4').version = null;
+for (const row of t.releases.values()) row.checked = row.id === 'mod-4' ? 0 : Date.now();
+out = await checkReleases(t.env, { limit: 1, fetchFeed: firstFeed(today) });
+check('a recent first release is news', out.found.length === 1 && out.found[0].id === 'mod-4' && out.found[0].version === 'v0.1.0-alpha');
+out = await checkReleases(t.env, { ids: ['mod-0', 'mod-3'], fetchFeed });
+check('a manual run can target specific mods', out.checked === 2 && out.results.map((x) => x.id).sort().join() === 'mod-0,mod-3');
+
 // ---- one live run: real GitHub feeds through the local Worker ----
 const run = async (secret, limit) => {
   const res = await fetch(`${BASE}/api/releases/check?limit=${limit}`, { method: 'POST', headers: { Authorization: `Bearer ${secret}` } });

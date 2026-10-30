@@ -55,7 +55,8 @@
   const SORTS = {
     quality: { label: 'Quality', dir: 'asc', get: (e) => TIER_ORDER.indexOf(e.quality), dirs: ['Best first', 'Worst first'] },
     coop: { label: 'Co-op %', dir: 'desc', get: (e) => pctOf(e), dirs: ['Lowest first', 'Highest first'] },
-    updated: { label: 'Last activity', dir: 'desc', get: (e) => e.updated, dirs: ['Oldest first', 'Newest first'] },
+    updated: { label: 'Last activity', dir: 'desc', get: (e) => lastActive(e), dirs: ['Oldest first', 'Newest first'] },
+    wanted: { label: 'Most wanted', dir: 'desc', get: (e) => (e.wantedGame ? e.wantedVotes : null), dirs: ['Fewest votes first', 'Most votes first'] },
     release: { label: 'Latest release', dir: 'desc', get: (e) => e.versionDate, dirs: ['Oldest first', 'Newest first'] },
     started: { label: 'Project start', dir: 'desc', get: (e) => e.started, dirs: ['Oldest first', 'Newest first'] },
     stars: { label: 'GitHub stars', dir: 'desc', get: (e) => e.stars, dirs: ['Fewest first', 'Most first'] },
@@ -210,6 +211,8 @@
   function countVisit(e) {
     if (counted.has(e.id) || !API_ON) return;
     counted.add(e.id);
+    // The server counts every hit now, so each browser session sends one per project.
+    try { if (sessionStorage.getItem(`rh-hit:${e.id}`)) return; sessionStorage.setItem(`rh-hit:${e.id}`, '1'); } catch { /* no storage: count it */ }
     try { navigator.sendBeacon(`${API}/hit`, JSON.stringify({ id: e.id })); } catch { /* no beacon */ }
   }
 
@@ -262,6 +265,9 @@
       if (l.video) e.devVideo = l.video;
       if (l.website) e.website = l.website;
       if (l.download) e.download = l.download;
+      if (l.repo) e.repo = l.repo;
+      if (e.consoleListed === undefined) e.consoleListed = e.console;
+      e.console = l.kind && CONSOLES[l.kind] ? l.kind : e.consoleListed;
       if (l.players) e.players = l.players;
       if (l.cover) e.cover = l.cover;
       if (l.quality && TIERS[l.quality]) { e.quality = l.quality; e.devRated = true; }
@@ -269,7 +275,7 @@
       if (l.engine) e.engine = l.engine;
       if (l.connect) e.toolchain = l.connect;
       if (l.sync) {
-        const map = { story: 'story', enemies: 'enemies', world: 'world_state', items: 'items' };
+        const map = { see: 'players_visible', story: 'story', enemies: 'enemies', world: 'world_state', items: 'items' };
         e.scope = { ...(e.scope || {}) };
         for (const [k, v] of Object.entries(l.sync)) if (map[k]) e.scope[map[k]] = v;
       }
@@ -277,17 +283,19 @@
   }
   // After the devs save in the editor: reload the numbers and listings, then reopen the details.
   window.addEventListener('coop:account', () => { if (dialog.open && currentId) openDetail(currentId, { push: false }); });
-  async function loadStats() {
+  async function loadStats(fresh = false) {
+    loadWanted();
     try {
-      const res = await fetch(`${API}/stats`, { headers: { Accept: 'application/json' } });
+      const res = await fetch(`${API}/stats`, { headers: { Accept: 'application/json' }, cache: fresh ? 'reload' : 'default' });
       if (!res.ok) return;
       const out = await res.json();
       API_ON = true;
+      addCommunity(out.community || []);
       applyStats(out.stats || {});
       applyListings(out.listings || {});
       refreshTrending();
       render();
-      if (dialog.open && currentId) openDetail(currentId, { push: false });
+      if (dialog.open && currentId) openDetail(currentId, { push: false }); else openFromHash();
     } catch { /* static hosting or offline: estimates only */ }
   }
 
@@ -298,7 +306,8 @@
     stages: new Set(),
     features: new Set(),
     ca: false,
-    view: 'table',
+    cl: false,
+    view: 'cards',
   };
 
   // ── Helpers ──────────────────────────────────────────────
@@ -315,8 +324,23 @@
   const today = Date.now();
   const daysSince = (d) => (d ? Math.max(0, Math.floor((today - Date.parse(d + 'T00:00:00Z')) / DAY)) : null);
 
+  // Newest of every date we know: the directory's push date, the live release and the dev's note.
+  // A "-01" date with no star count is a month-level placeholder, not a real push, so it only counts
+  // when nothing newer exists, and then shows as a month.
+  function lastActive(e) {
+    const known = [e.versionDate, e.devNoteDate, e.updated].filter(Boolean).sort();
+    return known.length ? known[known.length - 1] : null;
+  }
+  const approxActive = (e) => !!e.updated && lastActive(e) === e.updated && /-01$/.test(e.updated) && e.stars == null;
+  const fmtActive = (e) => {
+    const d = lastActive(e);
+    if (!d) return '';
+    if (!approxActive(e)) return fmtDate(d);
+    return new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  };
+
   function activity(e) {
-    const n = daysSince(e.updated);
+    const n = daysSince(lastActive(e));
     if (n == null) return 'unknown';
     if (n <= 60) return 'active';
     if (n <= 180) return 'quiet';
@@ -350,8 +374,9 @@
   };
   const stagePill = (e) => `<span class="stage" data-stage="${e.stage}">${esc(STAGES[e.stage]?.label || e.stage)}</span>`;
   const tierTile = (e) => `<span class="tier" data-tier="${e.quality}" title="${esc(e.quality + ': ' + (TIERS[e.quality]?.label || ''))}">${e.quality}</span>`;
+  const clTitles = new Set((window.COUCHLINK && window.COUCHLINK.titles) || []);
   const aiTag = (e) => (e.coopAnything ? '<span class="ca-badge" title="Made with Co-op Anything">Co-op Anything</span>' : '')
-;
+    + (clTitles.has(e.title) ? '<a class="ca-badge cl-badge" href="couchlink/" title="You can play this one together on one PC with Couchlink">Couchlink</a>' : '');
   const osIcon = (k) => `<svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${OS[k].path}"/></svg>`;
 
   // Table: only the systems it runs on, in the filter's order. A faded logo for the others
@@ -370,7 +395,7 @@
     return `<span class="os-set os-set--inline" title="Runs on ${esc(names)}" aria-label="Runs on ${esc(names)}">${e.platforms.map(osIcon).join('')}</span>`;
   }
 
-  const actTag = (e) => `<span class="act act--${activity(e)}" title="${e.updated ? 'Last push ' + esc(fmtDate(e.updated)) : 'No activity data'}">${esc(relTime(e.updated))}</span>`;
+  const actTag = (e) => `<span class="act act--${activity(e)}" title="${lastActive(e) ? (approxActive(e) ? 'Around ' : 'Last activity ') + esc(fmtActive(e)) : 'No activity data'}">${esc(approxActive(e) ? 'Around ' + fmtActive(e) : relTime(lastActive(e)))}</span>`;
 
   const STOPWORDS = new Set(['the', 'of', 'and', 'a', 'an', 'to', 'in']);
   function initials(title) {
@@ -396,8 +421,12 @@
 
   function subline(e) {
     const bits = [e.project, e.team && e.team !== e.project ? e.team : null].filter(Boolean);
-    return `${esc(bits.join(' · '))}${aiTag(e)}`;
+    return `${esc(bits.join(' · '))}${aiTag(e)}${e.community && !e.reviewed ? '<span class="rv-badge rv-badge--no" title="Listed by its developer. The owner has not looked at it yet.">Not reviewed</span>' : ''}`;
   }
+
+  // Detail cards: "Reviewed" for directory entries and community listings the owner has marked.
+  const reviewTag = (e) => ((e.community ? e.reviewed : !e.wantedGame && e.stage !== 'wanted')
+    ? '<span class="rv-badge rv-badge--yes" title="Looked at by the site owner">Reviewed</span>' : '');
 
   // ── Filtering & sorting ──────────────────────────────────
 
@@ -419,6 +448,37 @@
   }));
   const HAY = [...haystack.values()];
 
+  // Mods their devs listed themselves with /listing add (no directory edit needed). Once the same
+  // link is in the reviewed directory, that entry is shown and this one is skipped.
+  const linkKey = (u) => String(u || '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/[#?].*$/, '').replace(/\/$/, '');
+  function addCommunity(list) {
+    const have = new Set(DATA.filter((e) => !e.community).flatMap((e) => [e.repo, e.website, ...(e.otherUrls || [])]).map(linkKey).filter(Boolean));
+    const known = new Set(DATA.map((e) => e.id));
+    for (const c of list) {
+      if (known.has(c.id) || have.has(linkKey(c.url))) continue;
+      const github = /^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(c.url);
+      const e = {
+        id: c.id, title: c.game, project: c.project, console: 'mod', year: null, developer: null, genre: '', engine: '',
+        stage: 'development', status: 'prototype', quality: 'D', toolchain: 'Unknown', team: null,
+        repo: github ? c.url : null, website: github ? null : c.url, otherUrls: [], version: null, versionDate: null,
+        started: null, updated: c.created, stars: null, features: [], ai: false,
+        summary: 'Listed by its developer. It has not been reviewed yet, so check the project page for what works.',
+        requires: `Your own copy of ${c.game}.`,
+        scope: { players_visible: 'unknown', story: 'unknown', enemies: 'unknown', world_state: 'unknown', items: 'unknown' },
+        players: null, qa: 'none', qaLabel: 'Not checked', openSource: github ? 'yes' : 'unknown', coopPct: 0, adopt: false,
+        sources: [c.url], searched: null, checked: c.created, platforms: null, coopAnything: false, writeup: null, coverFrom: 'none',
+        community: true, reviewed: !!c.reviewed,
+      };
+      DATA.push(e);
+      SLUG.set(e.id, slugOf(e.title));
+      PROJECTS_PER_GAME.set(SLUG.get(e.id), (PROJECTS_PER_GAME.get(SLUG.get(e.id)) || 0) + 1);
+      const text = fold([e.title, e.project, e.toolchain, consoleOf(e).label, consoleOf(e).short].filter(Boolean).join(' '));
+      const h = { text, seq: text.split(' '), names: [...new Set(fold(`${e.title} ${e.project}`).split(' '))].filter((w) => w.length >= 4) };
+      haystack.set(e.id, h);
+      HAY.push(h);
+    }
+  }
+
   function hasTerm(h, t) {
     if (t.length >= 4 && h.text.includes(t)) return true;
     // From the start of a word, running on into the next words when spaces were left out.
@@ -433,6 +493,271 @@
     return false;
   }
   const NAME_WORDS = [...new Set(HAY.flatMap((h) => h.names))];
+
+  // ── Wanted games ─────────────────────────────────────────
+  // About two thousand games people could want a co-op mod for (D1, worker/wanted.js, IGDB ids), added to
+  // the catalog once loaded. They show when you search or press the Wanted tile; each has an upvote.
+  const WANTED = new Map();
+  let wantedCan = null;
+  const initialsOf = (t) => fold(t).split(' ').filter((w) => w && !['the', 'of', 'a', 'an'].includes(w)).map((w) => w[0]).join('');
+  const votesText = (e) => `${e.wantedVotes} ${e.wantedVotes === 1 ? 'person wants' : 'people want'} this co-op`;
+  const voteBtn = (e) => `<button type="button" class="wanted-vote${e.wantedMine ? ' is-on' : ''}" data-wvote="${e.wantedId}" aria-pressed="${!!e.wantedMine}" title="${e.wantedMine ? 'Remove your vote' : 'I want this co-op'}">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg><span class="wanted-n">${e.wantedVotes}</span></button>`;
+
+  const KIND_LABEL = { repo: 'Repository', 'mod-page': 'Mod page', site: 'Project site', article: 'Article', video: 'Video', discussion: 'Discussion', suggested: 'Suggested by the community' };
+  const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+  const wantedStatus = (k, mods) => (k === 'official_coop' ? 'Has official co-op'
+    : k === 'mod_found' && mods.length ? `${mods.length} ${mods.every((m) => m.a) ? 'possible ' : ''}co-op ${mods.length > 1 ? 'mods' : 'mod'} found`
+    : k === 'none_found' ? 'No co-op mod found' : 'Not checked yet');
+
+  function addWanted(list) {
+    const norm = (s) => fold(String(s).replace(/\(.*?\)/g, ''));
+    // The directory's hand-researched "nobody has made this" entries: their notes carry over to the matching game.
+    const gaps = new Map(DATA.filter((e) => e.stage === 'wanted' && !e.wantedGame).map((e) => [norm(e.title), e]));
+    const dropped = new Set();
+    // A game that has a listed project is linked to it by title here, so a project merged after the catalog was
+    // built still replaces its "Wanted" row (the catalog's own link, w.s, wins when it has one).
+    const listedByTitle = new Map();
+    for (const e of DATA) if (!e.wantedGame && e.stage !== 'wanted' && !listedByTitle.has(norm(e.title))) listedByTitle.set(norm(e.title), e.id);
+    for (const w0 of list) {
+      const w = { ...w0, s: w0.s || listedByTitle.get(norm(w0.n)) || null };
+      const mods = (w.p || []).filter((p) => p.url);
+      let k = w.k;
+      // Links the community suggested and a person approved.
+      for (const s of w.sg || []) if (!mods.some((m) => m.url === s.url)) mods.push({ name: hostOf(s.url), url: s.url, summary: s.note || '', kind: 'suggested' });
+      if (w.sg && w.sg.length && (k === 'unchecked' || k === 'none_found')) k = 'mod_found';
+      const gap = gaps.get(norm(w.n));
+      if (gap && !w.s) { dropped.add(gap.id); if (k === 'unchecked') k = 'none_found'; }
+      let e = WANTED.get(w.i);
+      if (!e) {
+        e = {
+          id: `w-${w.i}`, wantedGame: true, wantedId: w.i, wantedMine: false, title: w.n, console: 'gap', year: w.y || null, developer: null,
+          genre: '', engine: '', stage: 'wanted', status: 'none', quality: 'X', toolchain: 'Unknown', team: null, repo: null, website: null,
+          otherUrls: [], version: null, versionDate: null, started: null, updated: null, stars: null, features: [], ai: false, summary: '',
+          requires: null, scope: { players_visible: 'unknown', story: 'unknown', enemies: 'unknown', world_state: 'unknown', items: 'unknown' },
+          players: null, qa: 'none', qaLabel: 'Not checked', openSource: 'unknown', coopPct: 0, adopt: false, sources: [], searched: null,
+          checked: null, platforms: null, coopAnything: false, writeup: null, coverFrom: 'none',
+        };
+        WANTED.set(w.i, e);
+        DATA.push(e);
+        const text = fold(`${w.n} ${initialsOf(w.n)} ${w.y || ''}`);
+        const h = { text, seq: text.split(' '), names: [...new Set(fold(w.n).split(' '))].filter((x) => x.length >= 4) };
+        haystack.set(e.id, h);
+        HAY.push(h);
+        h.names.forEach((x) => { if (!NAME_WORDS.includes(x)) NAME_WORDS.push(x); });
+      }
+      Object.assign(e, {
+        wantedVotes: w.v, wantedCoop: k, wantedMods: mods, igdbSlug: w.l, steam: w.g, siteId: w.s || null, project: wantedStatus(k, mods),
+        cover: w.c ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${w.c}.jpg` : undefined,
+      });
+      // A game that already has a mod listed: its initials ("fnv") find that mod too.
+      const modHay = w.s && haystack.get(w.s);
+      if (modHay && !modHay.seq.includes(initialsOf(w.n))) { modHay.text += ` ${initialsOf(w.n)}`; modHay.seq = modHay.text.split(' '); }
+      if (gap && !w.s) Object.assign(e, { summary: gap.summary, sources: gap.sources || [], searched: gap.searched, checked: gap.checked });
+    }
+    for (let i = DATA.length - 1; i >= 0; i--) if (dropped.has(DATA[i].id)) DATA.splice(i, 1);
+  }
+
+  // A link like /#some-id opens that card, but the community and wanted entries only exist once loaded.
+  function openFromHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (id && !dialog.open && DATA.some((e) => e.id === id)) openDetail(id, { push: false });
+  }
+
+  async function loadWanted() {
+    try {
+      // The catalog is a static file (no database); only the vote counts and member requests come from the API,
+      // so the list still shows when the database is slow or down.
+      const [cat, live, mine] = await Promise.all([
+        fetch('data/wanted.json').then((r) => r.json()),
+        fetch(`${API}/wanted/all`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(`${API}/wanted/mine`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+      const votes = (live && live.votes) || {};
+      const suggested = (live && live.suggested) || {};
+      addWanted(cat.concat((live && live.extra) || []).map((w) => ({ ...w, v: votes[w.i] || 0, sg: suggested[`w:${w.i}`] })));
+      for (const e of DATA) if (!e.wantedGame) e.suggested = suggested[e.id] || null;
+      if (mine && mine.ok) {
+        wantedCan = mine.can;
+        const ids = new Set(mine.ids);
+        WANTED.forEach((e) => { e.wantedMine = ids.has(e.wantedId); });
+      }
+      render();
+      if (dialog.open && currentId) openDetail(currentId, { push: false }); else openFromHash();
+    } catch { /* the catalog just stays out */ }
+  }
+
+  // "Missing something?": a member suggests a co-op mod (a link) or reports a mistake. Nothing shows until a
+  // person approves it. The Worker checks everything again (worker/suggest.js).
+  const DISCORD_INVITE = 'https://discord.gg/EXGB49R82t';
+  function openSuggest(e) {
+    const target = e.wantedGame ? `w:${e.wantedId}` : e.id;
+    const a = window.COOP_ACCOUNT || {};
+    let d = document.getElementById('suggest-dialog');
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'suggest-dialog'; d.className = 'wanted-card'; d.setAttribute('aria-labelledby', 'suggest-title');
+      d.addEventListener('click', (ev) => { if (ev.target === d) d.close(); });
+      document.body.appendChild(d);
+    }
+    const login = (label) => (a.loginOn ? `<a class="btn" href="${esc(a.loginUrl())}">${label}</a>` : '');
+    const join = `<a class="btn btn--ghost" href="${DISCORD_INVITE}" target="_blank" rel="noopener">Join the Discord</a>`;
+    let body;
+    if (!a.user) body = `<p>Suggestions come from members of our Discord server. <strong>Join the Discord</strong>, then log in with it here to suggest a mod or a fix.</p><p>${join} ${login('Log in with Discord')}</p>`;
+    else if (wantedCan) body = `<p>${esc(wantedCan)}</p><p>${join} ${/log in/i.test(wantedCan) ? login('Log in again') : ''}</p>`;
+    else body = `<form id="sg-form" class="sg-form">
+        <fieldset class="sg-kind"><legend class="small muted">What do you want to send?</legend>
+          <label><input type="radio" name="kind" value="mod" checked> A co-op mod for this game</label>
+          <label><input type="radio" name="kind" value="correction"> Something here is wrong or missing</label></fieldset>
+        <label id="sg-url-row">Link to the mod's page <span class="muted">(GitHub, Nexus Mods, ModDB, itch.io, its website...)</span>
+          <input name="url" type="url" class="my-search" placeholder="https://" maxlength="300" autocomplete="off"></label>
+        <label>Note <span class="muted">(optional for a mod, required for a fix; text only, links are removed)</span>
+          <textarea name="note" rows="3" maxlength="280" class="my-search"></textarea></label>
+        <p class="small muted">A person checks every suggestion before it shows on the site. Please send real things only: accounts that send junk get paused.</p>
+        <p><button class="btn" type="submit">Send suggestion</button> <span id="sg-msg" class="small" role="status"></span></p></form>`;
+    d.innerHTML = `<form method="dialog" class="wanted-card__close"><button class="btn btn--ghost" aria-label="Close">Close</button></form>
+      <h2 id="suggest-title">Suggest something for ${esc(e.title)}</h2>${body}`;
+    if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+    const form = d.querySelector('#sg-form');
+    if (!form) return;
+    const sync = () => { d.querySelector('#sg-url-row').hidden = form.elements.kind.value !== 'mod'; };
+    form.addEventListener('change', sync); sync();
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const msg = d.querySelector('#sg-msg');
+      const kind = form.elements.kind.value;
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true; msg.textContent = 'Sending...';
+      const out = await postJSON('/suggest', { target, kind, url: form.elements.url.value.trim() || undefined, note: form.elements.note.value.trim() });
+      if (out.ok) { form.innerHTML = `<p><strong>${esc(out.message || 'Thank you!')}</strong></p>`; return; }
+      msg.textContent = out.error || 'That did not work.';
+      btn.disabled = false;
+    });
+  }
+
+  function wantedDetail(e) {
+    const mods = e.wantedMods || [];
+    const links = [
+      e.igdbSlug && `<a href="https://www.igdb.com/games/${encodeURIComponent(e.igdbSlug)}" target="_blank" rel="noopener">IGDB</a>`,
+      e.steam && `<a href="https://store.steampowered.com/app/${encodeURIComponent(e.steam)}" target="_blank" rel="noopener">Steam</a>`,
+    ].filter(Boolean).join(' · ');
+    const lead = e.wantedCoop === 'official_coop' ? 'This game ships with its own co-op.'
+      : mods.length ? ''
+      : e.wantedCoop === 'none_found' ? `Nobody has made <strong>${esc(e.title)}</strong> co-op yet, as far as anyone has found.`
+      : 'Nobody has checked this game for co-op mods yet.';
+    return `<div class="d-section d-wanted">
+      ${lead ? `<p>${lead}</p>` : ''}
+      <div class="wanted-vote-row">${voteBtn(e)}<span id="wv-text" class="small muted">${esc(votesText(e))}. Upvote it to show you want it.</span></div>
+      ${e.siteId ? `<p><button type="button" class="btn" data-goto="${esc(e.siteId)}">See the co-op mod listed for it →</button></p>` : ''}
+      ${mods.length ? `<h3>${mods.every((m) => m.a) ? 'Possible co-op projects' : 'Co-op projects found'}</h3>${mods.some((m) => m.a) ? '<p class="small muted">Found by searching the web, GitHub and mod sites. A person has not checked these, so they may not be what they look like.</p>' : ''}<ul class="wanted-mods">${mods.map((p) => `<li>
+        <a href="${esc(p.url)}" target="_blank" rel="noopener nofollow"><strong>${esc(p.name)}</strong></a>${p.kind && KIND_LABEL[p.kind] ? ` <span class="wanted-tag">${KIND_LABEL[p.kind]}</span>` : ''}${p.stage && STAGES[p.stage] ? ` <span class="stage" data-stage="${p.stage}">${esc(STAGES[p.stage].label)}</span>` : ''}
+        ${p.summary ? `<div class="small muted">${esc(p.summary)}</div>` : ''}</li>`).join('')}</ul>` : ''}
+      ${e.summary ? `<p>${esc(e.summary)}</p>` : ''}
+      ${links ? `<p class="small muted">${links}</p>` : ''}
+      ${sourcesHtml(e)}
+      <p class="small">Know a mod? <a href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener">Add it</a>. Want to build one? <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener">Co-op Anything</a> shows your AI agent how.</p>
+    </div>`;
+  }
+
+  function toast(text) {
+    let t = document.getElementById('wanted-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'wanted-toast'; t.className = 'wanted-toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    const a = window.COOP_ACCOUNT || {};
+    t.innerHTML = `${esc(text)}${/log in/i.test(text) && a.loginOn ? ` <a href="${esc(a.loginUrl())}">Log in</a>` : ''}`;
+    t.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => { t.hidden = true; }, 7000);
+  }
+
+  function syncVote(e) {
+    document.querySelectorAll(`[data-wvote="${e.wantedId}"]`).forEach((b) => {
+      b.classList.toggle('is-on', !!e.wantedMine); b.setAttribute('aria-pressed', String(!!e.wantedMine));
+      b.title = e.wantedMine ? 'Remove your vote' : 'I want this co-op';
+      b.querySelector('.wanted-n').textContent = e.wantedVotes;
+    });
+    const t = document.getElementById('wv-text');
+    if (t && currentId === e.id) t.textContent = `${votesText(e)}. Upvote it to show you want it.`;
+  }
+
+  const postJSON = (path, body) => fetch(`${API}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then((r) => r.json()).catch(() => ({ ok: false, error: 'Something went wrong.' }));
+
+  async function castVote(e) {
+    const a = window.COOP_ACCOUNT || {};
+    if (!a.user) { if (a.loginOn) location.href = a.loginUrl(); else toast('Logging in is not switched on yet.'); return; }
+    if (wantedCan) { toast(wantedCan); return; }
+    const on = !e.wantedMine;
+    e.wantedMine = on; e.wantedVotes += on ? 1 : -1; syncVote(e);
+    const out = await postJSON('/wanted/vote', { igdb_id: e.wantedId, on });
+    if (!out.ok) { e.wantedMine = !on; e.wantedVotes += on ? -1 : 1; syncVote(e); toast(out.error || 'That did not work.'); return; }
+    e.wantedVotes = out.votes; syncVote(e);
+  }
+
+  function openAddGame() {
+    const a = window.COOP_ACCOUNT || {};
+    let d = document.getElementById('add-dialog');
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'add-dialog'; d.className = 'wanted-card'; d.setAttribute('aria-labelledby', 'add-title');
+      d.addEventListener('click', (ev) => { if (ev.target === d) d.close(); });
+      document.body.appendChild(d);
+    }
+    const login = (label) => (a.loginOn ? `<a class="btn" href="${esc(a.loginUrl())}">${label}</a>` : '<span class="muted">Logging in is not switched on yet.</span>');
+    let body;
+    if (!a.user) body = `<p><strong>Log in with Discord to add a game.</strong> You need to be in the Co-op Anything server.</p><p>${login('Log in with Discord')}</p>`;
+    else if (wantedCan) body = `<p>${esc(wantedCan)}</p>${/log in/i.test(wantedCan) ? `<p>${login('Log in again')}</p>` : ''}`;
+    else body = `<label for="add-find"><strong>Find the game</strong> <span class="muted">(searches IGDB for PC games that are not on the list yet)</span></label>
+      <input id="add-find" class="my-search" type="search" placeholder="Start typing the game's name..." autocomplete="off">
+      <ul id="add-found" class="wanted-found"></ul><p id="add-msg" class="small" role="status"></p>`;
+    d.innerHTML = `<form method="dialog" class="wanted-card__close"><button class="btn btn--ghost" aria-label="Close">Close</button></form><h2 id="add-title">Add a game</h2>${body}`;
+    if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+    const find = d.querySelector('#add-find');
+    if (!find) return;
+    find.focus();
+    let timer = 0, token = 0;
+    const msg = d.querySelector('#add-msg'), found = d.querySelector('#add-found');
+    find.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = find.value.trim();
+      if (q.length < 2) { found.innerHTML = ''; msg.textContent = ''; return; }
+      timer = setTimeout(async () => {
+        const mine = ++token;
+        msg.textContent = 'Searching...';
+        try {
+          const res = await fetch(`${API}/igdb/search?q=${encodeURIComponent(q)}`);
+          const out = await res.json();
+          if (mine !== token) return;
+          if (!out.ok) { msg.innerHTML = esc(out.error || 'Search failed.') + (/log in/i.test(out.error || '') ? ` ${login('Log in')}` : ''); found.innerHTML = ''; return; }
+          found.innerHTML = out.games.map((g) => `<li><button type="button" class="wanted-pick" data-pick="${g.igdb_id}">
+            ${g.cover ? `<img src="https://images.igdb.com/igdb/image/upload/t_cover_small/${esc(g.cover)}.jpg" alt="" width="45" height="60">` : ''}
+            <span>${esc(g.name)}${g.year ? ` <span class="muted">${g.year}</span>` : ''}</span><span class="small">+ Add and vote</span></button></li>`).join('');
+          const listed = (out.listed || []).map((g) => `<button type="button" class="wanted-listed" data-listed="${esc(g.name)}">${esc(g.name)}</button>`).join(' ');
+          msg.innerHTML = listed ? `Already on the list (press to see it and vote): ${listed}` : (out.games.length ? '' : 'No PC games found with that name.');
+        } catch { if (mine === token) msg.textContent = 'Search failed. Try again.'; }
+      }, 300);
+    });
+    d.onclick = async (ev) => {
+      if (ev.target === d) { d.close(); return; }
+      const listed = ev.target.closest('[data-listed]');
+      if (listed) {
+        d.close();
+        state.stages = new Set(['wanted']); state.q = listed.dataset.listed; state.sort = 'wanted'; state.dir = 'desc';
+        $('#q').value = state.q;
+        render();
+        $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const pick = ev.target.closest('[data-pick]');
+      if (!pick) return;
+      pick.disabled = true;
+      const out = await postJSON('/wanted/request', { igdb_id: Number(pick.dataset.pick) });
+      if (!out.ok) { msg.textContent = out.error || 'That did not work.'; pick.disabled = false; return; }
+      d.close();
+      await loadWanted();
+      toast(out.added ? 'Added to the list, and your vote is in.' : 'It was already on the list, so your vote is in.');
+      openDetail(`w-${pick.dataset.pick}`);
+    };
+  }
 
   // Edit distance with swapped neighbours counting as one edit, giving up past max.
   function editDistance(a, b, max) {
@@ -480,6 +805,9 @@
   }
 
   function matches(e, ignoreStage) {
+    // The wanted catalog (thousands of games) stays out of the way: it shows when you search (games that
+    // have a mod listed show as that mod) or when the Wanted filter is on.
+    if (e.wantedGame && !(ignoreStage ? !state.q || !e.siteId : state.stages.has('wanted') || (state.q && !e.siteId))) return false;
     if (state.q) {
       const h = haystack.get(e.id);
       for (const { t, near } of searchTerms()) {
@@ -494,6 +822,7 @@
     if (!ignoreStage && state.stages.size && !state.stages.has(e.stage)) return false;
     for (const f of state.features) if (!FEATURE_FILTERS[f].tags.some((t) => (e.features || []).includes(t))) return false;
     if (state.ca && !e.coopAnything) return false;
+    if (state.cl && !clTitles.has(e.title)) return false;
     return true;
   }
 
@@ -516,7 +845,7 @@
 
   const isFiltered = () =>
     !!(state.q || state.console || state.genre || state.quality || state.toolchain || state.os ||
-      state.stages.size || state.features.size || state.ca);
+      state.stages.size || state.features.size || state.ca || state.cl);
 
   // ── Rendering ────────────────────────────────────────────
 
@@ -524,7 +853,12 @@
     const base = DATA.filter((e) => matches(e, true));
     const counts = Object.fromEntries(STAGE_ORDER.map((s) => [s, 0]));
     base.forEach((e) => { counts[e.stage] = (counts[e.stage] || 0) + 1; });
-    $('#stage-tiles').innerHTML = STAGE_ORDER.map((s) => `
+    const all = `
+      <button type="button" class="stage-tile stage-tile--all" data-stage="all" aria-pressed="${state.stages.size === 0}">
+        <span class="stage-tile__label">Everything</span>
+        <span class="stage-tile__n">${base.filter((e) => !e.wantedGame).length}</span>
+      </button>`;
+    $('#stage-tiles').innerHTML = all + STAGE_ORDER.map((s) => `
       <button type="button" class="stage-tile" data-stage="${s}" aria-pressed="${state.stages.has(s)}">
         <span class="stage-tile__n">${counts[s]}</span>
         <span class="stage-tile__dot" aria-hidden="true"></span>
@@ -550,9 +884,9 @@
           : '<span class="muted">No release</span>'}</td>
         <td class="small col-activity">${actTag(e)}</td>
         <td class="num col-score">${e.userScore != null
-          ? `<div class="stack"><span class="mono score">${scoreText(e)}</span><span class="small muted">${ratingsText(e)}</span>${trendTag(e)}</div>`
+          ? `<div class="rate-cell"><span class="star star--sm"><span class="star__bg">${starSvg()}</span><span class="star__fill" style="width:100%">${starSvg()}</span></span><span class="mono score">${scoreText(e)}</span><span class="small muted" title="${ratingsText(e)}">(${e.userScoreCount})</span>${trendTag(e)}</div>`
           : '<span class="muted">-</span>'}</td>
-        <td class="num"><div class="stack"><span class="mono">${fmtStars(e.stars)}</span>${gainTag(e)}</div></td>
+        <td class="num">${e.wantedGame ? voteBtn(e) : `<div class="stack"><span class="mono">${fmtStars(e.stars)}</span>${gainTag(e)}</div>`}</td>
       </tr>`).join('');
 
     document.querySelectorAll('.grid th[data-sort]').forEach((th) => {
@@ -561,37 +895,60 @@
     });
   }
 
-  function renderCards(list) {
-    $('#card-view').innerHTML = list.map((e) => `
-      <article class="card" data-id="${esc(e.id)}">
-        <div class="card__top">
-          <div class="card__meta">${ctag(e)}<span class="trunc">${esc(e.genre)}</span>${e.year ? `<span>${e.year}</span>` : ''}</div>
-          ${tierTile(e)}
-        </div>
-        <div class="card__main">${coverTile(e, 'md')}<div class="game">
-          <button type="button" class="game__title" data-open="${esc(e.id)}">${esc(e.title)}</button>
-          <span class="game__sub">${subline(e)}</span>
-        </div></div>
-        <div class="card__pct">${pctBar(e)}</div>
-        ${(e.features || []).length ? `<div class="feats">${e.features.map((f) => `<span class="feat">${esc(FEATURES[f] || f)}</span>`).join('')}</div>` : ''}
-        <div class="card__foot">
-          ${stagePill(e)}
-          <span class="muted">${actTag(e)}${e.userScore != null ? `<span class="mono" title="User score, from ${ratingsText(e)}">${scoreText(e)}/10</span>` : ''}<span class="mono" title="GitHub stars">${icon('star', 12)} ${fmtStars(e.stars)} ${gainTag(e)}</span></span>
-        </div>
-      </article>`).join('');
+  // Posters: the box art big, with a blurred copy of itself behind it, then the name, Co-op % and stage.
+  function posterCover(e) {
+    const cl = clTitles.has(e.title) ? '<span class="poster__cl" title="You can play this one together on one PC with Couchlink">Couchlink</span>' : '';
+    const art = e.cover
+      ? `<img src="${esc(e.cover)}" alt="" loading="lazy" decoding="async">`
+      : `<span class="poster__init" aria-hidden="true">${esc(initials(e.title))}</span>`;
+    return `<div class="poster__cover${e.cover ? '' : ' poster__cover--none'}" style="--c:${consoleOf(e).color}${e.cover ? `;--art:url('${esc(e.cover)}')` : ''}">${art}${cl}<span class="poster__tier">${tierTile(e)}</span></div>`;
   }
 
+  function renderCards(list) {
+    const poster = (e) => `
+      <article class="card poster" data-id="${esc(e.id)}">
+        ${posterCover(e)}
+        <div class="poster__body">
+          <button type="button" class="game__title poster__title" data-open="${esc(e.id)}">${esc(e.title)}</button>
+          <span class="poster__sub">${subline(e)}</span>
+          <div class="poster__pct">${pctBar(e)}</div>
+          <div class="poster__foot">${e.wantedGame ? voteBtn(e) : stagePill(e)}</div>
+        </div>
+      </article>`;
+    const parts = list.map(poster);
+    // The Couchlink band sits after the first few posters, but not in search results or the wanted list.
+    const band = document.getElementById('cl-band-tpl');
+    const wantedOnly = state.stages.size === 1 && state.stages.has('wanted');
+    if (band && !state.q && !wantedOnly && !state.cl && list.length > 6) parts.splice(6, 0, band.innerHTML);
+    $('#card-view').innerHTML = parts.join('');
+  }
+
+  // Long lists (the wanted catalog) are drawn a page at a time; any change to the filters starts over.
+  const PAGE = 120;
+  let shown = PAGE, shownSig = '';
+
   function render() {
-    const list = sortList(DATA.filter((e) => matches(e)));
+    const sig = JSON.stringify([state.q, state.console, state.genre, state.quality, state.toolchain, state.os, [...state.stages], [...state.features], state.ca, state.cl, state.sort, state.dir]);
+    if (sig !== shownSig) { shownSig = sig; shown = PAGE; }
+    const full = sortList(DATA.filter((e) => matches(e)));
+    const list = full.slice(0, shown);
     renderStageTiles();
 
-    const total = DATA.length;
+    const total = DATA.filter((e) => !e.wantedGame).length;
     const guessed = state.q ? searchTerms().filter((x) => x.near && x.near.size).map((x) => x.t) : [];
-    $('#count').innerHTML = (list.length === total
-      ? `<strong>${total}</strong> co-op projects across <strong>${GAME_COUNT}</strong> games`
-      : `Showing <strong>${list.length}</strong> of ${total} co-op projects`)
-      + (guessed.length && list.length
+    const wantedOnly = state.stages.size === 1 && state.stages.has('wanted');
+    $('#count').innerHTML = (wantedOnly
+      ? `<strong>${full.length.toLocaleString('en')}</strong> games people could play together${state.sort === 'wanted' ? ', most wanted first' : ''}. Press the arrow on a game to vote for it.`
+      : full.length === total
+        ? `<strong>${total}</strong> co-op projects across <strong>${GAME_COUNT}</strong> games`
+        : `Showing <strong>${full.length.toLocaleString('en')}</strong> of ${total} co-op projects`)
+      + (guessed.length && full.length
         ? ` <span class="count__guess">· close matches for ${guessed.map((t) => `“${esc(t)}”`).join(', ')}</span>` : '');
+    const more = $('#more-wrap');
+    if (more) {
+      more.hidden = full.length <= list.length;
+      $('#more').textContent = `Show ${Math.min(PAGE, full.length - list.length)} more (${(full.length - list.length).toLocaleString('en')} left)`;
+    }
 
     $('#reset').disabled = !isFiltered();
     $('#empty').hidden = list.length > 0;
@@ -612,6 +969,8 @@
       el.classList.toggle('is-set', !!state[key]);
     }
     $('#ca-toggle').setAttribute('aria-pressed', String(state.ca));
+    $('#cl-toggle').setAttribute('aria-pressed', String(state.cl));
+    $('#filters-toggle').classList.toggle('has-set', !!(state.console || state.genre || state.quality || state.toolchain || state.ca));
     document.querySelectorAll('#os-filter button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.os === state.os)));
     document.querySelectorAll('#feature-chips .chip').forEach((c) => c.setAttribute('aria-pressed', String(state.features.has(c.dataset.feature))));
 
@@ -752,41 +1111,115 @@
 
   // The community box: the current numbers, then a vote form (when the Worker's API answers).
   const myVotes = () => { try { return JSON.parse(store.get('ch-votes') || '{}'); } catch { return {}; } };
+  const STAR_PATH = 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z';
+  const starSvg = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_PATH}"/></svg>`;
+  const OUTCOME_ICONS = {
+    finished: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M9 11l3 3L22 4',
+    mostly: 'M6 3l14 9-14 9V3z',
+    broke: 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01',
+    'no-start': 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM15 9l-6 6M9 9l6 6',
+  };
+  const CHECK_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+  const pctWords = (p) => (p < 20 ? 'Barely playable together' : p < 50 ? 'Some of it works' : p < 80 ? 'Most of it works' : p < 100 ? 'Nearly the whole game' : 'The whole game');
+  // Five stars filled to a score out of 10 (display only).
+  const starsRow = (score10) => `<span class="stars" role="img" aria-label="${(score10 / 2).toFixed(1)} stars out of 5">${[0, 1, 2, 3, 4].map((i) =>
+    `<span class="star"><span class="star__bg">${starSvg()}</span><span class="star__fill" style="width:${Math.round(Math.min(1, Math.max(0, score10 / 2 - i)) * 100)}%">${starSvg()}</span></span>`).join('')}</span>`;
+  const ringSvg = (p) => `<svg class="ring" viewBox="0 0 100 100" role="img" aria-label="${p == null ? 'No estimate' : `${p} percent co-op`}"><circle cx="50" cy="50" r="40" class="ring__track"/>${p == null ? '' : `<circle cx="50" cy="50" r="40" class="ring__fill" stroke-dasharray="${(p / 100 * 251.3).toFixed(1)} 251.3" transform="rotate(-90 50 50)"/>`}<text x="50" y="59" text-anchor="middle">${p == null ? '-' : `${p}%`}</text></svg>`;
+  const mineBits = (v) => [v.score ? `${v.score} / 10` : '', v.pct != null ? `${v.pct}% co-op` : '', v.outcome && OUTCOMES[v.outcome] ? OUTCOMES[v.outcome] : ''].filter(Boolean);
+
+  // The ratings section of the detail dialog: the numbers, then a button that opens the rate-it sheet.
   function communityHtml(e) {
     if (e.stage === 'wanted') return '';
-    const outcomes = e.outcomes ? Object.entries(OUTCOMES).filter(([k]) => e.outcomes[k])
-      .map(([k, label]) => `<li data-outcome="${k}"><span class="mono">${e.outcomes[k]}</span> ${label.toLowerCase()}</li>`).join('') : '';
     const pct = pctOf(e);
-    const summary = `
-      <div class="vote__now">
-        <div><span class="vote__big mono">${pct == null ? '-' : pct + '%'}</span><span class="small muted">${pctIsVoted(e)
-          ? `co-op, from ${e.votePctN} votes` : e.votePctN ? `estimate (${e.votePctN} of ${PCT_MIN_VOTES} votes so far)` : 'estimate, no votes yet'}</span></div>
-        <div><span class="vote__big mono">${e.userScore != null ? scoreText(e) : '-'}</span><span class="small muted">${e.userScore != null ? `/ 10 from ${ratingsText(e)}` : 'no ratings yet'}</span></div>
+    const rows = Object.entries(OUTCOMES).map(([k, label]) => ({ k, label, n: (e.outcomes && e.outcomes[k]) || 0 }));
+    const total = rows.reduce((n, o) => n + o.n, 0);
+    const mine = API_ON ? (myVotes()[e.id] || {}) : {};
+    const bits = mineBits(mine);
+    return `<div class="d-section vote" id="vote">
+      <div class="vote__head"><h3>Ratings</h3>${API_ON ? `<button type="button" class="btn" data-rate="${esc(e.id)}">${mine.at ? 'Edit my vote' : 'Rate it'}</button>` : ''}</div>
+      <div class="vote__cards">
+        <div class="vote__card"><span class="vote__label">Co-op</span>${ringSvg(pct)}<span class="small muted">${pctIsVoted(e)
+          ? `From ${e.votePctN} votes` : e.votePctN ? `Estimate. ${e.votePctN} of ${PCT_MIN_VOTES} votes so far` : 'Estimate, no votes yet'}</span></div>
+        <div class="vote__card"><span class="vote__label">Rating</span>
+          <span class="vote__big">${e.userScore != null ? scoreText(e) : '-'}</span>
+          <span class="small muted">${e.userScore != null ? 'out of 10' : 'No ratings yet'}</span>
+          ${e.userScore != null ? `${starsRow(e.userScore)}<span class="small muted">${ratingsText(e)}</span>` : ''}</div>
+        <div class="vote__card"><span class="vote__label">Sessions</span>
+          <span class="vote__big">${total || '-'}</span>
+          <span class="small muted">${total ? (total === 1 ? 'session reported' : 'sessions reported') : 'None reported yet'}</span></div>
       </div>
-      ${outcomes ? `<ul class="vote__outcomes">${outcomes}</ul>` : ''}`;
-    if (!API_ON) {
-      return `<div class="d-section vote"><h3>Community check</h3>${summary}<p class="small muted">Voting opens on the live site.</p></div>`;
-    }
-    const mine = myVotes()[e.id] || {};
-    const pctVal = mine.pct ?? (pct ?? 50);
-    return `<div class="d-section vote" id="vote"><h3>Community check</h3>${summary}
-      <form class="vote__form" data-vote="${esc(e.id)}">
-        <label class="vote__q" for="v-pct">How much of the game could you play together? <output id="v-pct-out" class="mono">${pctVal}%</output></label>
-        <input id="v-pct" name="pct" type="range" min="0" max="100" step="5" value="${pctVal}" data-touched="${mine.pct != null}">
-        <fieldset class="vote__q"><legend>Your rating</legend>
-          <div class="vote__scores">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) =>
-            `<label><input type="radio" name="score" value="${n}"${mine.score === n ? ' checked' : ''}><span>${n}</span></label>`).join('')}</div>
-        </fieldset>
-        <fieldset class="vote__q"><legend>How did your session go?</legend>
-          <div class="vote__opts">${Object.entries(OUTCOMES).map(([k, label]) =>
-            `<label><input type="radio" name="outcome" value="${k}"${mine.outcome === k ? ' checked' : ''}><span>${label}</span></label>`).join('')}</div>
-        </fieldset>
-        <div class="vote__send">
-          <button class="btn" type="submit">${mine.at ? 'Update my vote' : 'Send my vote'}</button>
-          <p class="vote__status small" role="status">${mine.at ? 'You voted on this one. Sending again replaces your vote.' : 'No account needed. One vote per person; you can change it.'}</p>
-        </div>
-      </form>
+      ${total ? `<h4 class="vote__sub">How sessions went</h4><ul class="vote__bars">${rows.map((o) =>
+        `<li data-outcome="${o.k}"><span>${o.label}</span><span class="vote__bar"><span style="width:${Math.round(o.n / total * 100)}%"></span></span><span class="mono">${o.n}</span></li>`).join('')}</ul>` : ''}
+      ${!API_ON ? '<p class="small muted">Voting opens on the live site.</p>' : bits.length
+        ? `<div class="vote__prompt vote__prompt--mine"><span class="vote__tick">${CHECK_SVG}</span><div><strong>Your vote</strong><span>${esc(bits.join(' · '))}</span></div><button type="button" class="btn btn--ghost" data-rate="${esc(e.id)}">Edit</button></div>`
+        : `<div class="vote__prompt"><div><strong>Played it?</strong><span>Rate it in about 20 seconds. No account needed.</span></div><button type="button" class="btn" data-rate="${esc(e.id)}">Rate it</button></div>`}
     </div>`;
+  }
+
+  // The rate-it sheet: one question at a time, big targets, nothing to read.
+  function rateSheetHtml(e) {
+    const mine = myVotes()[e.id] || {};
+    const pct0 = mine.pct ?? (pctOf(e) ?? 50);
+    const score = mine.score || 0;
+    const fillOf = (i) => (score >= 2 * i ? 100 : score === 2 * i - 1 ? 50 : 0);
+    return `<form class="vote__form rs" data-vote="${esc(e.id)}">
+      <div class="rs__head">${coverTile(e, 'sm')}<div><h2 id="rs-title">${e.project && e.project.length <= 24 ? `Rate ${esc(e.project)}` : 'Rate it'}</h2><p>${esc(e.title)}</p></div>
+        <button type="button" class="d-close rs__close" data-sheet-close aria-label="Close">×</button></div>
+
+      <div class="rs__q">
+        <div class="rs__row"><label for="v-pct">How much could you play together?</label><output class="rs__big">${pct0}%</output></div>
+        <input id="v-pct" name="pct" type="range" min="0" max="100" step="5" value="${pct0}" data-touched="${mine.pct != null}">
+        <div class="rs__ticks"><span>Barely</span><span>Half</span><span>Most</span><span>All</span></div>
+        <div class="rs__words">${pctWords(pct0)}</div>
+      </div>
+
+      <div class="rs__q">
+        <div class="rs__row"><span id="rs-rate-l">Your rating</span><span class="rs__score">${score ? `${score} / 10` : 'Not rated'}</span></div>
+        <div class="stars-pick" role="radiogroup" aria-labelledby="rs-rate-l">
+          ${Array.from({ length: 10 }, (_, k) => `<input class="sr-only" type="radio" name="score" id="rs-${k + 1}" value="${k + 1}"${score === k + 1 ? ' checked' : ''}>`).join('')}
+          ${[1, 2, 3, 4, 5].map((i) => `<span class="star star--pick"><span class="star__bg">${starSvg()}</span><span class="star__fill" data-fill="${i}" style="width:${fillOf(i)}%">${starSvg()}</span>
+            <label class="star__half star__half--l" for="rs-${2 * i - 1}" title="${2 * i - 1} out of 10"><span class="sr-only">${2 * i - 1} out of 10</span></label>
+            <label class="star__half star__half--r" for="rs-${2 * i}" title="${2 * i} out of 10"><span class="sr-only">${2 * i} out of 10</span></label></span>`).join('')}
+        </div>
+        <p class="small muted">Tap the left or right half of a star. Ratings are out of 10.</p>
+      </div>
+
+      <div class="rs__q">
+        <div class="rs__row"><span id="rs-out-l">How did your session go?</span></div>
+        <div class="rs__opts" role="radiogroup" aria-labelledby="rs-out-l">${Object.entries(OUTCOMES).map(([k, label]) =>
+          `<label class="opt" data-outcome="${k}"><input class="sr-only" type="radio" name="outcome" value="${k}"${mine.outcome === k ? ' checked' : ''}><span class="opt__row"><span class="opt__icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${OUTCOME_ICONS[k]}"/></svg></span><span class="opt__label">${label}</span><span class="opt__check">${CHECK_SVG}</span></span></label>`).join('')}</div>
+      </div>
+
+      <button class="rs__send" type="submit">${mine.at ? 'Update my vote' : 'Send my vote'}</button>
+      <p class="vote__status small" role="status">${mine.at ? 'You voted on this one. Sending again replaces your vote.' : 'No account needed. One vote per person, and you can change it later.'}</p>
+    </form>`;
+  }
+
+  function openRateSheet(id) {
+    const e = DATA.find((x) => x.id === id);
+    if (!e) return;
+    let d = document.getElementById('rate-sheet');
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'rate-sheet';
+      d.className = 'sheet';
+      d.setAttribute('aria-labelledby', 'rs-title');
+      document.body.appendChild(d);
+      d.addEventListener('click', (ev) => { if (ev.target === d || ev.target.closest('[data-sheet-close]')) d.close(); });
+    }
+    d.innerHTML = rateSheetHtml(e);
+    if (!d.open) d.showModal();
+  }
+
+  function sheetThanks(sheet, id) {
+    const v = myVotes()[id] || {};
+    const line = (k, val) => `<div><span>${k}</span><strong>${esc(val)}</strong></div>`;
+    sheet.innerHTML = `<div class="rs rs--done">
+      <span class="rs__tick">${CHECK_SVG.replace('width="14" height="14"', 'width="44" height="44"')}</span>
+      <h2 id="rs-title">Thanks, your vote is in.</h2><p>It helps the next player decide.</p>
+      <div class="rs__sum">${line('Co-op', v.pct != null ? `${v.pct}%` : 'Not said')}${line('Rating', v.score ? `${v.score} / 10` : 'Not rated')}${line('Session', v.outcome && OUTCOMES[v.outcome] ? OUTCOMES[v.outcome] : 'Not said')}</div>
+      <button type="button" class="rs__send" data-sheet-close>Done</button>
+      <button type="button" class="text-btn" data-rate="${esc(id)}">Change my vote</button></div>`;
   }
 
   async function sendVote(form) {
@@ -800,7 +1233,7 @@
     if (data.get('outcome')) body.outcome = String(data.get('outcome'));
     if (Object.keys(body).length === 1) {
       status.dataset.state = 'error';
-      status.textContent = 'Move the slider, pick a rating or say how it went first.';
+      status.textContent = 'Pick a rating, say how it went or move the slider first.';
       return;
     }
     const button = form.querySelector('button[type="submit"]');
@@ -818,12 +1251,8 @@
       if (out.stats) applyStats({ ...Object.fromEntries(DATA.map((x) => [x.id, statsOf(x)])), [id]: out.stats });
       render();
       openDetail(id, { push: false });
-      const again = $('#d-body .vote__status');
-      if (again) {
-        again.dataset.state = 'ok';
-        again.textContent = 'Thanks! Your vote counts now.';
-        $('#vote').scrollIntoView({ block: 'center' });
-      }
+      const sheet = document.getElementById('rate-sheet');
+      if (sheet && sheet.open) sheetThanks(sheet, id);
     } catch (err) {
       status.dataset.state = 'error';
       status.textContent = err.message || 'Couldn’t reach the vote service. Try again later.';
@@ -839,6 +1268,23 @@
     if (!range) return;
     range.dataset.touched = 'true';
     range.form.querySelector('output').textContent = `${range.value}%`;
+    const words = range.form.querySelector('.rs__words');
+    if (words) words.textContent = pctWords(Number(range.value));
+  });
+  document.addEventListener('change', (ev) => {
+    const r = ev.target.closest('.vote__form input[name="score"]');
+    if (!r) return;
+    const n = Number(r.value);
+    r.form.querySelectorAll('.star__fill[data-fill]').forEach((f) => {
+      const i = Number(f.dataset.fill);
+      f.style.width = `${n >= 2 * i ? 100 : n === 2 * i - 1 ? 50 : 0}%`;
+    });
+    const out = r.form.querySelector('.rs__score');
+    if (out) out.textContent = `${n} / 10`;
+  });
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-rate]');
+    if (b) openRateSheet(b.dataset.rate);
   });
   document.addEventListener('submit', (ev) => {
     const form = ev.target.closest('form[data-vote]');
@@ -866,6 +1312,8 @@
     const fact = (k, v) => (v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : '');
     const slug = SLUG.get(e.id);
     const siblings = PROJECTS_PER_GAME.get(slug);
+    // Game pages are built from the directory only; a game with just developer-listed (community) projects has none.
+    const hasPage = !e.wantedGame && DATA.some((x) => !x.community && !x.wantedGame && SLUG.get(x.id) === slug);
     const wanted = e.stage === 'wanted';
 
     $('#d-body').innerHTML = `
@@ -873,17 +1321,18 @@
       <div class="d-head">
         ${fullCover(e)}
         <div class="d-head__text">
-          <div class="d-head__meta">${ctag(e)}<span>${esc(c.label)}</span>${e.year ? `<span>· ${e.year}</span>` : ''}</div>
+          <div class="d-head__meta">${ctag(e)}<span>${esc(c.label)}</span>${e.year ? `<span>· ${e.year}</span>` : ''}${reviewTag(e)}</div>
           <h2 class="d-title" id="d-title">${esc(e.title)}</h2>
           <div class="d-head__meta">${subline(e)}</div>
         </div>
       </div>
-      <div class="d-verdict">
+      ${e.wantedGame ? '' : `<div class="d-verdict">
         <span class="tier" data-tier="${e.quality}">${e.quality === 'X' ? '?' : e.quality}</span>
         <div><strong>${esc(t.label)}</strong><span>${esc(t.text)}</span>${e.devRated ? '<span class="small muted d-devrated">Rated by its devs</span>' : ''}</div>
-      </div>
-      ${siblings > 1 ? `<a class="d-compare" href="games/${slug}/"><span>${siblings} projects cover this game.</span><strong>Which one should I play? →</strong></a>` : ''}
-      ${wanted ? `<div class="d-section d-wanted"><p>Nobody has made <strong>${esc(e.title)}</strong> co-op yet, as far as anyone has found. Know a mod? <a href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener">Add it</a>. Want to build one? <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener">Co-op Anything</a> shows your AI agent how.</p></div>` : `
+      </div>`}
+      ${e.wantedGame ? wantedDetail(e) : ''}
+      ${siblings > 1 && hasPage ? `<a class="d-compare" href="games/${slug}/"><span>${siblings} projects cover this game.</span><strong>Which one should I play? →</strong></a>` : ''}
+      ${e.wantedGame ? '' : wanted ? `<div class="d-section d-wanted"><p>Nobody has made <strong>${esc(e.title)}</strong> co-op yet, as far as anyone has found. Know a mod? <a href="https://github.com/cranebeaker/coop-anything/issues/new?template=new-coop-mod.yml" target="_blank" rel="noopener">Add it</a>. Want to build one? <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener">Co-op Anything</a> shows your AI agent how.</p></div>` : `
       <dl class="facts">
         ${fact('Stage', stagePill(e))}
         ${fact('Co-op', pctBar(e))}
@@ -892,7 +1341,7 @@
         ${fact('Players', esc(e.players || ''))}
         ${fact('Tested', esc(e.qaLabel || ''))}
         ${fact('Latest release', e.version || e.versionDate ? `<span class="mono">${esc(e.version || 'Release')}</span>${e.versionDate ? `<br><span class="small muted">${esc(fmtDate(e.versionDate))}</span>` : ''}` : '<span class="muted">No release found</span>')}
-        ${fact('Last activity', `${actTag(e)}${e.updated ? `<br><span class="small muted">${esc(fmtDate(e.updated))}</span>` : ''}`)}
+        ${fact('Last activity', `${actTag(e)}${lastActive(e) && !approxActive(e) ? `<br><span class="small muted">${esc(fmtActive(e))}</span>` : ''}`)}
         ${fact('GitHub stars', e.stars != null ? `<span class="mono">${e.stars.toLocaleString('en')}</span>${
           e.starsWeek > 0 ? `<br><span class="small gain">+${e.starsWeek.toLocaleString('en')} this week</span>` : ''}` : '')}
         ${fact('Open source', e.openSource && e.openSource !== 'unknown' ? esc(e.openSource === 'yes' ? 'Yes' : e.openSource === 'no' ? 'No' : 'Partly') : '')}
@@ -900,10 +1349,12 @@
       </dl>
       <div class="d-section"><h3>What's synced</h3>${scopeHtml(e)}</div>`}
       ${e.devNote ? `<div class="d-section d-devnote"><h3>Update from the devs</h3><p>${esc(e.devNote)}</p>${e.devNoteDate ? `<p class="small muted">${esc(fmtDate(e.devNoteDate))}</p>` : ''}</div>` : ''}
-      ${wanted ? '' : `<details class="d-section d-rate"${new URLSearchParams(location.search).has('vote') ? ' open' : ''}><summary>${icon('star')} Rate it and vote on its co-op %</summary>${communityHtml(e)}</details>`}
+      ${e.suggested && e.suggested.length ? `<div class="d-section"><h3>Also suggested by the community</h3><ul class="wanted-mods">${e.suggested.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener nofollow ugc">${esc(hostOf(s.url))}</a>${s.note ? `<div class="small muted">${esc(s.note)}</div>` : ''}</li>`).join('')}</ul><p class="small muted">A person looked at these links before they were added, but this site does not run them.</p></div>` : ''}
+      ${wanted || e.wantedGame ? '' : communityHtml(e)}
       <div class="d-links">
-        <a class="btn d-open" href="games/${slug}/#${encodeURIComponent(e.id)}" title="${siblings > 1 ? `Every detail, the devs' description and video, and how it compares with the other ${siblings - 1} ${siblings === 2 ? 'project' : 'projects'} for ${esc(e.title)}.` : `Every detail, the devs' description and video, sources and comments.`}">Open full page →</a>
+        ${hasPage ? `<a class="btn d-open" href="games/${slug}/#${encodeURIComponent(e.id)}" title="${siblings > 1 ? `Every detail, the devs' description and video, and how it compares with the other ${siblings - 1} ${siblings === 2 ? 'project' : 'projects'} for ${esc(e.title)}.` : `Every detail, the devs' description and video, sources and comments.`}">Open full page →</a>` : ''}
         ${window.COOP_ACCOUNT?.canEdit(e.id) ? `<button type="button" class="btn btn--edit" data-edit="${esc(e.id)}">${icon('pencil')}Edit listing</button>` : ''}
+        <button type="button" class="btn btn--ghost" data-suggest="${esc(e.id)}" title="Know a co-op mod that is missing, or see something wrong here?">Missing something? Suggest it</button>
         ${e.download ? `<a class="btn" href="${esc(e.download)}" target="_blank" rel="noopener nofollow" data-visit="${esc(e.id)}">Download ↗</a>` : ''}
         ${e.discord ? `<a class="btn btn--discord" href="${esc(e.discord)}" target="_blank" rel="noopener" title="Chat with this mod's devs in their topic on the Co-op Anything Discord">${DISCORD_ICON}Discord topic</a>` : ''}
         ${e.repo ? `<a class="btn btn--edit" href="${esc(e.repo)}" target="_blank" rel="noopener" data-visit="${esc(e.id)}">Repository ↗</a>` : ''}
@@ -915,7 +1366,7 @@
     }
     dialog.scrollTop = 0;
     if (push) pushDetail(e.id);
-    countVisit(e);
+    if (!e.wantedGame) countVisit(e);
   }
 
 
@@ -924,8 +1375,8 @@
   // sits where it shows on the card, the description renders as you type, and one Save bar at the
   // bottom sends only what changed to POST /api/listing/edit (the Worker checks it all again).
   const CONNECTS = ['Direct IP', 'Steam (no port forwarding)', 'Hosted relay', 'Dedicated server', 'LAN or split-screen', 'VPN needed'];
-  const SYNC_EDIT = [['story', 'story', 'Story'], ['enemies', 'enemies', 'Enemies'], ['world', 'world_state', 'World'], ['items', 'items', 'Items']];
-  const EDIT_FIELDS = ['cover', 'quality', 'stage', 'coop_pct', 'engine', 'connect', 'players', 'version', 'summary', 'video', 'note', 'website', 'download'];
+  const SYNC_EDIT = [['see', 'players_visible', 'See each other'], ['story', 'story', 'Story'], ['enemies', 'enemies', 'Enemies'], ['world', 'world_state', 'World'], ['items', 'items', 'Items']];
+  const EDIT_FIELDS = ['cover', 'quality', 'stage', 'coop_pct', 'engine', 'connect', 'players', 'version', 'summary', 'video', 'note', 'website', 'download', 'repo', 'kind'];
 
   function editDetail(id) {
     const e = DATA.find((x) => x.id === id);
@@ -959,6 +1410,7 @@
           </div>
         </div>
         <dl class="facts ed-facts">
+          <div><dt>Type</dt><dd><select class="ed-field" name="kind">${opt('', `As listed (${CONSOLES[e.consoleListed ?? e.console]?.label || e.console})`, cur('kind'))}${['mod', 'fork', 'decomp-port', 'framework', 'emulator-netplay'].map((k) => opt(k, CONSOLES[k].label, cur('kind'))).join('')}</select></dd></div>
           <div><dt>Stage</dt><dd><select class="ed-field" name="stage">${opt('', `As listed (${STAGES[e.stage]?.label || e.stage})`, cur('stage'))}${['released', 'beta', 'development', 'abandoned'].map((s) => opt(s, STAGES[s].label, cur('stage'))).join('')}</select></dd></div>
           <div><dt>Co-op %</dt><dd><input class="ed-field" name="coop_pct" type="number" min="0" max="100" step="1" value="${esc(cur('coop_pct'))}" placeholder="${pctOf(e)}"></dd></div>
           <div><dt>Engine</dt><dd><input class="ed-field" name="engine" value="${esc(cur('engine'))}" maxlength="60" placeholder="${esc(e.engine || e.genre || '')}"></dd></div>
@@ -986,6 +1438,7 @@
         <div class="d-section"><h3>Short news</h3><input class="ed-field" name="note" value="${esc(cur('note'))}" maxlength="200" placeholder="One line, no links. Shows as Update from the devs."></div>
         <div class="d-section ed-pair">
           <label><span>Website</span><input class="ed-field" name="website" type="url" value="${esc(cur('website'))}" placeholder="${esc(e.website || 'https://...')}"></label>
+          <label><span>Repository</span><input class="ed-field" name="repo" type="url" value="${esc(cur('repo'))}" placeholder="${esc(e.repo || 'https://github.com/owner/repo')}"></label>
           <label><span>Download page</span><input class="ed-field" name="download" type="url" value="${esc(cur('download'))}" placeholder="https://.../releases"></label>
         </div>
         <p class="ed-status" role="status" aria-live="polite"></p>
@@ -1042,7 +1495,7 @@
         const out = await res.json().catch(() => ({}));
         if (!res.ok || !out.ok) throw new Error(out.error || 'Couldn’t save. Try again later.');
         status.dataset.state = 'ok'; status.textContent = 'Saved. It’s live now.';
-        await loadStats();
+        await loadStats(true);
         openDetail(id, { push: false });
       } catch (err) {
         status.dataset.state = 'error'; status.textContent = err.message;
@@ -1116,6 +1569,7 @@
       if (state.stages.size) p.set('stage', [...state.stages].join(','));
       if (state.features.size) p.set('has', [...state.features].join(','));
       if (state.ca) p.set('ca', '1');
+      if (state.cl) p.set('cl', '1');
       if (window.COOP_LANG === 'ru') p.set('lang', 'ru');
       if (state.sort !== DEFAULTS.sort || state.dir !== DEFAULTS.dir) { p.set('sort', state.sort); p.set('dir', state.dir); }
       const qs = p.toString();
@@ -1129,8 +1583,10 @@
     for (const k of ['q', 'console', 'genre', 'quality', 'toolchain']) if (p.get(k)) state[k] = p.get(k);
     if (OS[p.get('os')]) state.os = p.get('os');
     (p.get('stage') || '').split(',').filter((s) => STAGES[s]).forEach((s) => state.stages.add(s));
+    if (state.stages.has('wanted') && !p.get('sort')) { state.sort = 'wanted'; state.dir = 'desc'; }
     (p.get('has') || '').split(',').filter((f) => FEATURE_FILTERS[f]).forEach((f) => state.features.add(f));
     state.ca = p.get('ca') === '1';
+    state.cl = p.get('cl') === '1';
     if (SORTS[p.get('sort')]) state.sort = p.get('sort');
     if (['asc', 'desc'].includes(p.get('dir'))) state.dir = p.get('dir');
   }
@@ -1163,7 +1619,7 @@
   }
 
   function resetFilters() {
-    Object.assign(state, { q: '', console: '', genre: '', quality: '', toolchain: '', os: '', ca: false });
+    Object.assign(state, { q: '', console: '', genre: '', quality: '', toolchain: '', os: '', ca: false, cl: false });
     state.stages.clear();
     state.features.clear();
     $('#q').value = '';
@@ -1185,6 +1641,7 @@
 
 
   $('#ca-toggle').addEventListener('click', () => { state.ca = !state.ca; render(); });
+  $('#cl-toggle').addEventListener('click', () => { state.cl = !state.cl; render(); });
 
   // "/" jumps to the search box from anywhere on the page.
   document.addEventListener('keydown', (ev) => {
@@ -1195,12 +1652,39 @@
     $('#q').select();
   });
 
+  // The Filters button opens the panel of dropdowns under the results bar.
+  $('#filters-toggle').addEventListener('click', (ev) => {
+    const panel = $('#filters-panel');
+    panel.hidden = !panel.hidden;
+    ev.currentTarget.setAttribute('aria-expanded', String(!panel.hidden));
+  });
+
   $('#stage-tiles').addEventListener('click', (ev) => {
     const tile = ev.target.closest('.stage-tile');
     if (!tile) return;
     const s = tile.dataset.stage;
+    if (s === 'all') {
+      state.stages.clear();
+      if (state.sort === 'wanted') { state.sort = DEFAULTS.sort; state.dir = DEFAULTS.dir; }
+      render();
+      return;
+    }
     state.stages.has(s) ? state.stages.delete(s) : state.stages.add(s);
+    // The Wanted tile is the list to vote on: most wanted first.
+    if (s === 'wanted' && state.stages.has('wanted') && state.sort === DEFAULTS.sort) { state.sort = 'wanted'; state.dir = 'desc'; }
+    if (s === 'wanted' && !state.stages.has('wanted') && state.sort === 'wanted') { state.sort = DEFAULTS.sort; state.dir = DEFAULTS.dir; }
     render();
+  });
+
+  document.addEventListener('click', (ev) => {
+    const goto = ev.target.closest('[data-goto]');
+    if (goto) { openDetail(goto.dataset.goto); return; }
+    const vote = ev.target.closest('[data-wvote]');
+    if (vote) { const e = WANTED.get(Number(vote.dataset.wvote)); if (e) castVote(e); return; }
+    if (ev.target.closest('#add-game')) { openAddGame(); return; }
+    const sug = ev.target.closest('[data-suggest]');
+    if (sug) { const e = DATA.find((x) => x.id === sug.dataset.suggest); if (e) openSuggest(e); return; }
+    if (ev.target.closest('#more')) { shown += PAGE; render(); }
   });
 
   $('#reset').addEventListener('click', resetFilters);
@@ -1224,7 +1708,7 @@
 
   $('#results').addEventListener('click', (ev) => {
     const opener = ev.target.closest('[data-open]') || ev.target.closest('tr[data-id], .card[data-id]');
-    if (!opener || ev.target.closest('a')) return;
+    if (!opener || ev.target.closest('a') || ev.target.closest('[data-wvote]')) return;
     openDetail(opener.dataset.open || opener.dataset.id);
   });
 
@@ -1257,7 +1741,7 @@
   const savedView = store.get('rh-view');
   state.view = savedView === 'cards' || savedView === 'table'
     ? savedView
-    : (window.matchMedia && window.matchMedia('(max-width: 760px)').matches ? 'cards' : 'table');
+    : 'cards';
 
   readURL();
   buildControls();

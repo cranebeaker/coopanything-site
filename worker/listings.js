@@ -5,14 +5,16 @@
 // Everything is checked here, so neither path can store something the other wouldn't.
 
 export const STAGES = new Set(['released', 'beta', 'development', 'abandoned']);
-const SYNC_KEYS = ['story', 'enemies', 'world', 'items'];
+const SYNC_KEYS = ['see', 'story', 'enemies', 'world', 'items'];
 const SYNC_VALUES = new Set(['yes', 'partial', 'no']);
 const DISCORD_THREAD = /^https:\/\/discord\.com\/channels\/\d{15,22}\/\d{15,22}$/;
 export const COLUMNS = ['discord', 'dev_role', 'leads', 'stage', 'version', 'version_date', 'note', 'note_date',
-  'summary', 'video', 'website', 'download', 'players', 'sync', 'cover', 'quality', 'coop_pct', 'engine', 'connect'];
+  'summary', 'video', 'website', 'download', 'players', 'sync', 'cover', 'quality', 'coop_pct', 'engine', 'connect', 'repo', 'kind'];
 // Fields the editor and /listing may set; discord and dev_role only come from the bot.
-const EDITABLE = ['stage', 'version', 'note', 'summary', 'video', 'website', 'download', 'players', 'sync',
-  'cover', 'quality', 'coop_pct', 'engine', 'connect'];
+const EDITABLE = ['stage', 'version', 'note', 'summary', 'video', 'website', 'download', 'repo', 'players', 'sync',
+  'cover', 'quality', 'coop_pct', 'engine', 'connect', 'kind'];
+// What kind of project it is. Official modes and wanted entries are the owner's, not a dev's to claim.
+export const KINDS = new Set(['mod', 'fork', 'decomp-port', 'framework', 'emulator-netplay']);
 export const TIERS = new Set(['S', 'A', 'B', 'C', 'D', 'X']);
 export const CONNECT = new Set(['Direct IP', 'Steam (no port forwarding)', 'Hosted relay', 'Dedicated server', 'LAN or split-screen', 'VPN needed']);
 // Cover images are only linked: an image file, or a known image host.
@@ -31,6 +33,17 @@ function httpsUrl(value, what) {
   try { u = new URL(String(value).trim()); } catch { throw new BadField(`The ${what} isn’t a link.`); }
   if (u.protocol !== 'https:' || u.username || u.password || String(value).length > 300) throw new BadField(`The ${what} has to be an https:// link.`);
   return u.toString();
+}
+
+// The code repository: GitHub, GitLab or Codeberg, owner/repo, tidied.
+export function repoUrl(value) {
+  const u = new URL(httpsUrl(value, 'repository link'));
+  const host = u.hostname.replace(/^www\./, '');
+  const m = /^\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(u.pathname);
+  if (!['github.com', 'gitlab.com', 'codeberg.org'].includes(host) || !m) {
+    throw new BadField('The repository is a GitHub, GitLab or Codeberg link like https://github.com/owner/repo.');
+  }
+  return `https://${host}/${m[1]}/${m[2]}`;
 }
 
 // Videos are only linked and embedded from their own site: YouTube, Vimeo or Streamable.
@@ -88,6 +101,11 @@ export function checkFields(body, { fromBot, owner = false }) {
   if (has('video')) set.video = videoUrl(body.video);
   if (has('website')) set.website = httpsUrl(body.website, 'website link');
   if (has('download')) set.download = httpsUrl(body.download, 'download link');
+  if (has('repo')) set.repo = repoUrl(body.repo);
+  if (has('kind')) {
+    if (!KINDS.has(body.kind)) throw new BadField('The project type is mod, fork or port, decomp port, framework or tool, or emulator netplay.');
+    set.kind = body.kind;
+  }
   if (has('players')) {
     const p = String(body.players).trim();
     if (!/^[\w +\-–]{1,20}$/.test(p)) throw new BadField('Players is short, like 2 or 2-4.');
@@ -165,6 +183,6 @@ export function publicListing(r) {
   return Object.fromEntries(Object.entries({
     discord: r.discord, stage: r.stage, version: r.version, versionDate: r.version_date, note: r.note, noteDate: r.note_date,
     summary: r.summary, video: r.video, website: r.website, download: r.download, players: r.players, sync,
-    cover: r.cover, quality: r.quality, coopPct: r.coop_pct, engine: r.engine, connect: r.connect,
+    cover: r.cover, quality: r.quality, coopPct: r.coop_pct, engine: r.engine, connect: r.connect, repo: r.repo, kind: r.kind,
   }).filter(([, v]) => v != null));
 }

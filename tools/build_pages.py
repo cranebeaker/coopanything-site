@@ -65,7 +65,7 @@ FEEDBACK_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?labels=c
 BUG_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?title=%5BCoOp%3AAnything%20bug%5D%20'
 REPO_URL = 'https://github.com/cranebeaker/coop-anything'
 QUICKSTART_URL = 'https://github.com/cranebeaker/coop-anything#quick-start'
-STATIC = ['index.html', 'favicon.ico', 'styles.css', 'app.js', 'game.js', 'i18n.js', 'md.js', 'account.js', 'editor.js', 'my.js', 'assets', 'data']
+STATIC = ['index.html', 'favicon.ico', 'styles.css', 'home.css', 'app.js', 'game.js', 'i18n.js', 'md.js', 'account.js', 'editor.js', 'my.js', 'couchlink.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
 with open(os.path.join(ROOT, 'data', 'tables.js'), encoding='utf-8') as _f:
@@ -97,6 +97,7 @@ STAGE_COLORS = {'released': '#4cc47f', 'beta': '#3fc7c1', 'development': '#e3a63
                 'wanted': '#e08bd6'}
 
 TODAY = dt.datetime.now(dt.timezone.utc).date()
+COUCHLINK_TITLES = set()  # directory titles that are also in data/couchlink.json; main() fills it
 esc = html.escape
 
 
@@ -255,6 +256,14 @@ def mail_meta():
     return f'<meta name="rh-mail" content="{esc(MAIL_API)}">\n' if MAIL_API else ''
 
 
+def couchlink_tab(root, current=None):
+    """The masthead's Couchlink tab (the page is couchlink/). aria-current marks it on its own page."""
+    here = ' aria-current="page"' if current == 'couchlink' else ''
+    return (f'<a class="nav-link nav-link--tab" href="{root}couchlink/"{here} aria-label="Couchlink" '
+            'title="Couchlink: play one game together on one PC, split-screen or one monitor each">'
+            f'<img src="{root}assets/couchlink/couchlink-mark.svg" alt="" width="24" height="24"><span>Couchlink</span></a>')
+
+
 def newsletter_button(root):
     """The masthead's Newsletter button, to the sign-up box on the front page (index.html has its own)."""
     if not MAIL_API:
@@ -316,6 +325,8 @@ def card(e, game, rows):
     sub = [x for x in (e.get('team') if e.get('team') != e['project'] else None,
                        edition.group(1) if edition and not edition.group(1).isdigit() else None) if x]
     ai = '<span class="ca-badge" title="Made with Co-op Anything">Co-op Anything</span>' if e.get('coopAnything') else ''
+    if e['title'] in COUCHLINK_TITLES:
+        ai += '<a class="ca-badge cl-badge" href="../../couchlink/" title="You can play this one together on one PC with Couchlink">Couchlink</a>'
     badge = f'<span class="gp-badge">{pick_label(game)}</span>' if multi and e is game['pick'] else ''
     muted = '<span class="muted">{}</span>'.format
     small = ' <span class="small muted">{}</span>'.format
@@ -560,7 +571,7 @@ def analytics_note():
             'without cookies or personal data, to rank Trending.</p>\n')
 
 
-def document(*, title, description, path, share_url, image_alt, body, snapshot, visit=None, scripts=(), ld=None):
+def document(*, title, description, path, share_url, image_alt, body, snapshot, visit=None, scripts=(), ld=None, current=None, footer_extra=''):
     """A whole page in the site's header and footer. path is from the site root, like "games/pt/".
     visit: the id of a project to count a visit for when the page opens."""
     root = '../' * path.count('/')
@@ -603,7 +614,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
   <div class="wrap masthead__top">
     <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="CoOp:Anything, back to every co-op mod" width="2074" height="370"></a>
     <div class="masthead__actions">
-      {newsletter_button(root)}<a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
+      {newsletter_button(root)}<a class="nav-link" href="{root}?stage=wanted#results">Wanted</a>{couchlink_tab(root, current)}<a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
       <a class="submit-btn feedback-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.49 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.7 19.7 0 0 0-4.88 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42Z"/></svg>
         <span>Join Discord</span>
@@ -626,7 +637,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 
 <footer class="wrap footer">
   <p>Every mod listed needs your own copy of the game. CoOp:Anything links to projects and hosts no game files.</p>
-  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>, from the <a href="{REPO_URL}/blob/main/DIRECTORY.md" target="_blank" rel="noopener">Co-op Anything directory</a>; repository stats from GitHub. Box art belongs to each game's publisher. <a href="{root}">See every co-op mod</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a> · <a href="{BUG_URL}" target="_blank" rel="noopener">Report a bug</a> · <a href="https://github.com/cranebeaker/coopanything-site" target="_blank" rel="noopener">Contribute on GitHub</a>. Built on <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">Recomp Haven</a> by rikuwru (MIT License), with AI help.</p>
+{footer_extra}  <p>Data snapshot <time datetime="{snapshot}">{fmt_date(snapshot)}</time>, from the <a href="{REPO_URL}/blob/main/DIRECTORY.md" target="_blank" rel="noopener">Co-op Anything directory</a>; repository stats from GitHub. Box art belongs to each game's publisher. <a href="{root}">See every co-op mod</a> · <a href="{root}releases/">Latest releases</a> · <a href="{SITE}/feed.xml">RSS feed</a> · <a href="{FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a> · <a href="{BUG_URL}" target="_blank" rel="noopener">Report a bug</a> · <a href="https://github.com/cranebeaker/coopanything-site" target="_blank" rel="noopener">Contribute on GitHub</a>. Built on <a href="https://github.com/rikuwru/recomphaven" target="_blank" rel="noopener">Recomp Haven</a> by rikuwru (MIT License), with AI help.</p>
 {analytics_note()}</footer>
 
 <script src="{root}i18n.js"></script>
@@ -706,7 +717,8 @@ def my_page(share_url, snapshot):
     </div>
   </header>
 
-  <div id="my-projects" class="my-projects" data-root="../"><p class="muted">Loading...</p></div>"""
+  <div id="my-projects" class="my-projects" data-root="../"><p class="muted">Loading...</p></div>
+  <div id="my-ai" class="my-projects"></div>"""
     return document(title='My projects', description='Edit the listings of the co-op mods you develop.', path='my/',
                     share_url=share_url, image_alt='CoOp:Anything: every co-op mod for single-player games', body=body,
                     snapshot=snapshot, scripts=('my.js',))
@@ -774,6 +786,152 @@ def releases_page(entries, share_url, snapshot):
         'The newest releases of every co-op mod on CoOp:Anything, '
         'newest first. Subscribe with RSS.'), path='releases/', share_url=share_url,
         image_alt='CoOp:Anything: every co-op mod for single-player games', body=body, snapshot=snapshot)
+
+
+# ── Couchlink ────────────────────────────────────────────
+
+COUCHLINK_REPO = 'https://github.com/cranebeaker/couchlink'
+COUCHLINK_DOWNLOAD = COUCHLINK_REPO + '/releases'  # /releases/latest skips pre-releases
+CL_TIERS = {
+    'tested': ('Tested', 'The Couchlink team checked it.'),
+    'recipe': ('Recipe', 'Written for Couchlink, not checked yet.'),
+    'community': ('Community', 'A community recipe Couchlink ships; not tested by the team yet.'),
+}
+CL_GENERIC_NOTE = 'Not tested with Couchlink yet.'
+CL_STEAM = {
+    'shared': ('Your Steam login', 'Every copy runs under your own Steam account.'),
+    'goldberg': ('Steam emulator', 'Each copy gets its own pretend Steam identity (the Goldberg emulator), for games you own.'),
+    'none': ('No Steam needed', 'The game does not need Steam.'),
+}
+CL_DOWNLOAD_ICON = ('<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" '
+                    'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+CL_SEARCH_ICON = ('<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" '
+                  'stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>')
+
+
+def load_couchlink(games):
+    """data/couchlink.json, with each game matched to the directory by game page (slug_of of its name,
+    or an optional "dir" slug in the data). A game in the directory lends its cover and gets a page link."""
+    path = os.path.join(ROOT, 'data', 'couchlink.json')
+    if not os.path.isfile(path):
+        return {'updated': None, 'games': []}
+    with open(path, encoding='utf-8') as f:
+        raw = json.load(f)
+    by_slug = {g['slug']: g for g in games}
+    out = []
+    for g in raw.get('games', []):
+        slug = g.get('dir') or slug_of(g['game'])
+        page_game = by_slug.get(slug)
+        cover = g.get('cover')
+        if not cover and page_game:
+            cover = next((e['cover'] for e in page_game['entries'] if e.get('cover')), None)
+        out.append(dict(g, slug=slug if page_game else None, cover_path=cover,
+                        titles=sorted({e['title'] for e in page_game['entries']}) if page_game else []))
+    return {'updated': raw.get('updated'), 'games': out}
+
+
+def cl_players(p):
+    if not p:
+        return ''
+    lo, hi = (p[0], p[-1]) if isinstance(p, list) else (p, p)
+    return f'{lo} players' if lo == hi else f'{lo} to {hi} players'
+
+
+def cl_card(g):
+    label, tier_text = CL_TIERS.get(g['tier'], CL_TIERS['recipe'])
+    steam_label, steam_text = CL_STEAM.get(g.get('steam'), (None, None))
+    cover = g.get('cover_path')
+    if cover and not cover.startswith(('http://', 'https://')):
+        cover = '../' + cover
+    if cover:
+        # A fixed 3:4 box (see .cl-card .cover), so a late image never moves the cards around it.
+        tile = (f'<span class="cover cover--md" data-initials="{esc(initials(g["game"]))}" style="--c:var(--cl-blue)">'
+                f'<img src="{esc(cover)}" alt="" width="60" height="80" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>')
+    else:
+        tile = (f'<span class="cover cover--md cover--none" style="--c:var(--cl-blue)" aria-hidden="true">'
+                f'{esc(initials(g["game"]))}</span>')
+    links = []
+    if g.get('slug'):
+        links.append(f'<a href="../games/{esc(g["slug"])}/">Co-op mods for this game</a>')
+    search = ' '.join(x for x in (g['game'], label, g.get('notes') or '', steam_label or '') if x)
+    note = (g.get('notes') or '').strip()
+    if note.startswith(CL_GENERIC_NOTE):  # said already by the tier pill, so only a remainder shows
+        note = note[len(CL_GENERIC_NOTE):].strip()
+    notes = f'<p class="cl-notes">{esc(note)}</p>' if note else ''
+    foot = f'<div class="card__foot cl-links">{" ".join(links)}</div>' if links else ''
+    steam = f'<span class="game__sub" title="{esc(steam_text)}">{esc(steam_label)}</span>' if steam_label else ''
+    return f'''      <article class="card card--static cl-card" data-tier="{esc(g['tier'])}" data-search="{esc(search)}">
+        <div class="card__top">
+          <span class="cl-tier" data-tier="{esc(g['tier'])}" title="{esc(tier_text)}">{esc(label)}</span>
+          <span class="card__meta">{esc(cl_players(g.get('players')))}</span>
+        </div>
+        <div class="card__main">{tile}<div class="game">
+          <h3 class="game__title cl-name">{esc(g['game'])}</h3>
+          {steam}
+        </div></div>
+        {notes}
+        {foot}
+      </article>'''
+
+
+def couchlink_page(cl, share_url, snapshot):
+    games = sorted(cl['games'], key=lambda g: (list(CL_TIERS).index(g['tier']) if g['tier'] in CL_TIERS else 9, g['game'].lower()))
+    n = len(games)
+    chips = ''.join(
+        f'<button type="button" class="cl-chip" data-tier="{k}" aria-pressed="false" title="{esc(t)}">'
+        f'<span class="cl-tier" data-tier="{k}">{v}</span><span class="cl-chip__n">{sum(1 for g in games if g["tier"] == k)}</span></button>'
+        for k, (v, t) in CL_TIERS.items())
+    legend = ''.join(f'<li><span class="cl-tier" data-tier="{k}">{v}</span> {esc(t)}</li>' for k, (v, t) in CL_TIERS.items())
+    body = f'''  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">All co-op mods</a></nav>
+
+  <header class="cl-hero">
+    <img class="cl-hero__mark" src="../assets/couchlink/couchlink-mark.svg" alt="" width="96" height="96">
+    <div class="gp-hero__text">
+      <h1 class="gp-title">Couchlink</h1>
+      <p class="gp-lede">Play one PC game together on one PC. Couchlink starts a copy of the game for each player, up to eight.</p>
+      <ul class="cl-points">
+        <li>Split one screen between players, or give each player a whole monitor.</li>
+        <li>Each player gets their own controller, or their own keyboard and mouse, plus their own name and saves.</li>
+        <li>One Steam account is enough, or give any player their own.</li>
+        <li>Pick a game, press a button on your controller to join, and play.</li>
+        <li>When you quit, Couchlink puts your PC back the way it was.</li>
+      </ul>
+      <div class="cl-cta">
+        <a class="btn cl-download" href="{COUCHLINK_DOWNLOAD}" target="_blank" rel="noopener">{CL_DOWNLOAD_ICON}Download Couchlink</a>
+        <span class="cl-note">Windows and Linux now, macOS next. English and Russian. Free and open source.</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="cl-games" aria-labelledby="cl-games-h">
+    <h2 class="gp-h2" id="cl-games-h">Supported games</h2>
+    <ul class="cl-legend">{legend}</ul>
+    <div class="cl-controls">
+      <div class="search search--hero">
+        <label for="cl-q" class="sr-only">Search the Couchlink games</label>
+        {CL_SEARCH_ICON}
+        <input id="cl-q" type="search" placeholder="Search a game: Subnautica, Left 4 Dead 2..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="cl-chips" role="group" aria-label="Filter by tier">{chips}</div>
+    </div>
+    <p id="cl-count" class="count" aria-live="polite">{n:,} {'game' if n == 1 else 'games'}</p>
+    <div id="cl-cards" class="cards">
+''' + '\n'.join(cl_card(g) for g in games) + f'''
+    </div>
+    <p id="cl-more-wrap" class="more-wrap" hidden><button id="cl-more" class="btn btn--ghost" type="button">Show more</button></p>
+    <div id="cl-empty" class="empty" hidden>
+      <p class="empty__title">No Couchlink game matches.</p>
+      <p>Try another name, or clear the filters. Missing a game? <a href="{COUCHLINK_REPO}/issues" target="_blank" rel="noopener">Tell us on GitHub</a>.</p>
+      <button id="cl-reset" class="btn" type="button">Clear filters</button>
+    </div>
+    <p class="fine">Game list updated <time datetime="{esc(cl.get('updated') or snapshot)}">{fmt_date(cl.get('updated') or snapshot)}</time>. Every game needs your own copy. Couchlink hosts no game files.</p>
+  </section>'''
+    extra = ''
+    return document(title='Couchlink', description=(
+        'Couchlink starts a copy of a PC game for each player on one PC, up to eight: split-screen or one monitor each, with their own controller or keyboard and mouse. '
+        'Download it and see which games work.'), path='couchlink/', share_url=share_url,
+        image_alt='CoOp:Anything: every co-op mod for single-player games', body=body, snapshot=snapshot,
+        scripts=('couchlink.js',), current='couchlink', footer_extra=extra)
 
 
 def feed(entries, limit=50):
@@ -1028,6 +1186,34 @@ def versioned(path, rel):
         return f'{SITE}/{rel}?v={hashlib.sha1(f.read()).hexdigest()[:10]}'
 
 
+LOCAL_ASSET = re.compile(r'''(\b(?:href|src)=")((?:\.\./)*)([\w/.-]+\.(?:css|js|png))(")''')
+
+
+def bust_caches(out):
+    """Adds ?v=<content hash> to every page's own CSS, JS and image links, so a browser holding an
+    old or broken copy (one Opera user got the page with no styles or scripts) fetches the new one."""
+    hashes = {}
+
+    def stamp(m):
+        rel = m[3]
+        if rel not in hashes:
+            path = os.path.join(out, rel)
+            if not os.path.isfile(path):
+                return m[0]
+            with open(path, 'rb') as f:
+                hashes[rel] = hashlib.sha1(f.read()).hexdigest()[:10]
+        return f'{m[1]}{m[2]}{rel}?v={hashes[rel]}{m[4]}'
+
+    for folder, _, files in os.walk(out):
+        for name in files:
+            if name.endswith('.html'):
+                path = os.path.join(folder, name)
+                with open(path, encoding='utf-8') as f:
+                    html = f.read()
+                with open(path, 'w', encoding='utf-8', newline='\n') as f:
+                    f.write(LOCAL_ASSET.sub(stamp, html))
+
+
 # ── Main ─────────────────────────────────────────────────
 
 def main():
@@ -1044,6 +1230,8 @@ def main():
                for e in entries]
     games = group(entries)
     snapshot = meta.get('snapshot') or TODAY.isoformat()
+    cl = load_couchlink(games)
+    COUCHLINK_TITLES.update(t for g in cl['games'] for t in g['titles'])
 
     # Empty the folder rather than delete it: on Windows a running `wrangler dev` holds it open.
     os.makedirs(out, exist_ok=True)
@@ -1052,7 +1240,17 @@ def main():
         shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
     for name in STATIC:
         src = os.path.join(ROOT, name)
-        (shutil.copytree if os.path.isdir(src) else shutil.copy2)(src, os.path.join(out, name))
+        if os.path.isdir(src):
+            # data/seed holds the research working files and seed.sql: never part of the public site.
+            shutil.copytree(src, os.path.join(out, name), ignore=shutil.ignore_patterns('seed') if name == 'data' else None)
+        else:
+            shutil.copy2(src, os.path.join(out, name))
+
+    # Signed live recipes for the Couchlink app (couch-research/tools/publish_recipes.py makes them; the
+    # app only trusts files that match the signed index, so they are copied as they are).
+    signed = os.environ.get('COUCHLINK_SIGNED_RECIPES') or os.path.join(ROOT, '..', 'couch-research', 'signed-recipes')
+    if os.path.isfile(os.path.join(signed, 'index.json.sig')):
+        shutil.copytree(signed, os.path.join(out, 'couchlink', 'recipes'), dirs_exist_ok=True)
 
     share_dir = os.path.join(out, 'assets', 'share')
     os.makedirs(share_dir)
@@ -1063,7 +1261,7 @@ def main():
         index = f.read()
     with open(os.path.join(out, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(index.replace('https://SITE_URL/assets/share/home.jpg', home_url).replace('https://SITE_URL', SITE)
-                .replace('</head>', analytics_tag()
+                .replace('</head>', '<script>window.COUCHLINK=' + json.dumps({'titles': sorted(COUCHLINK_TITLES)}) + ';</script>\n' + analytics_tag()
                          + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + mail_meta() + '</head>', 1)
                 .replace('</footer>', analytics_note() + '</footer>', 1)
                 .replace('</main>', seo_index(games) + '</main>', 1))
@@ -1071,6 +1269,9 @@ def main():
     os.makedirs(os.path.join(out, 'releases'))
     with open(os.path.join(out, 'releases', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(releases_page(entries, home_url, snapshot))
+    os.makedirs(os.path.join(out, 'couchlink'), exist_ok=True)
+    with open(os.path.join(out, 'couchlink', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(couchlink_page(cl, home_url, snapshot))
     os.makedirs(os.path.join(out, 'my'), exist_ok=True)
     with open(os.path.join(out, 'my', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(my_page(home_url, snapshot))
@@ -1086,7 +1287,8 @@ def main():
             f.write(page(game, versioned(img, f'assets/share/{game["slug"]}.jpg'), snapshot))
 
     latest = releases(entries)
-    urls = [(f'{SITE}/', snapshot), (f'{SITE}/releases/', latest[0]['versionDate'] if latest else snapshot)]
+    urls = [(f'{SITE}/', snapshot), (f'{SITE}/releases/', latest[0]['versionDate'] if latest else snapshot),
+            (f'{SITE}/couchlink/', cl.get('updated') or snapshot)]
     urls += [(f'{SITE}/games/{g["slug"]}/', g['updated'] or snapshot) for g in games]
     with open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8', newline='\n') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
@@ -1113,6 +1315,7 @@ def main():
                     'urls': [u for u in [e.get('repo') or e.get('website')] + (e.get('otherUrls') or []) if u]}
                    for e in sorted(entries, key=lambda e: e['title'].lower()) if e['stage'] != 'wanted'], f, ensure_ascii=False)
 
+    bust_caches(out)
     multi = sum(1 for g in games if len(g['entries']) > 1)
     print(f'{len(entries)} projects, {len(games)} game pages ({multi} comparing several projects) -> {out}')
 
