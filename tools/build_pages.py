@@ -1158,28 +1158,6 @@ def home_card(entries, games, out):
     im.save(out, 'JPEG', quality=86, optimize=True, progressive=True)
 
 
-def seo_index(games):
-    """Plain HTML links to every game page, for the front page. The table is drawn by app.js, so
-    without this a crawler sees no link to any game page and has only the sitemap to find them."""
-    def item(g):
-        n = sum(1 for e in g['entries'] if e['stage'] != 'wanted')
-        note = f' <span>{n} {"mod" if n == 1 else "mods"}</span>' if n else ''
-        return f'<li><a href="games/{g["slug"]}/">{esc(g["name"])}</a>{note}</li>'
-
-    have = [g for g in games if any(e['stage'] != 'wanted' for e in g['entries'])]
-    none = [g for g in games if g not in have]
-    return (
-        '<section class="wrap seo-index" aria-labelledby="seo-index-h">\n'
-        '<h2 id="seo-index-h">Co-op mods by game</h2>\n'
-        f'<p>{len(have)} single-player games have a co-op mod listed here. Each page says how much of the game '
-        'you can play together, what is synced, how it was tested and how to connect.</p>\n'
-        f'<ul class="seo-index__list">{"".join(item(g) for g in have)}</ul>\n'
-        f'<details><summary>{len(none)} games where nobody has found a co-op mod yet</summary>\n'
-        f'<ul class="seo-index__list">{"".join(item(g) for g in none)}</ul></details>\n'
-        '</section>\n'
-    )
-
-
 def versioned(path, rel):
     """Absolute URL with a content hash, so link previews refresh when the card changes."""
     with open(path, 'rb') as f:
@@ -1263,8 +1241,7 @@ def main():
         f.write(index.replace('https://SITE_URL/assets/share/home.jpg', home_url).replace('https://SITE_URL', SITE)
                 .replace('</head>', '<script>window.COUCHLINK=' + json.dumps({'titles': sorted(COUCHLINK_TITLES)}) + ';</script>\n' + analytics_tag()
                          + ('<meta name="rh-comments" content="on">\n' if COMMENTS_ON else '') + mail_meta() + '</head>', 1)
-                .replace('</footer>', analytics_note() + '</footer>', 1)
-                .replace('</main>', seo_index(games) + '</main>', 1))
+                .replace('</footer>', analytics_note() + '</footer>', 1))
 
     os.makedirs(os.path.join(out, 'releases'))
     with open(os.path.join(out, 'releases', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
