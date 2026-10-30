@@ -598,6 +598,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <meta property="og:image:alt" content="{esc(image_alt)}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="CoOp:Anything: latest releases" href="{SITE}/feed.xml">
+<link rel="icon" type="image/svg+xml" href="{root}assets/icons/icon.svg" sizes="any">
 <link rel="icon" href="{root}favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="{root}assets/icons/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icons/icon-192.png">
