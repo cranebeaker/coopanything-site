@@ -65,7 +65,7 @@ FEEDBACK_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?labels=c
 BUG_URL = 'https://github.com/cranebeaker/coop-anything/issues/new?title=%5BCoOp%3AAnything%20bug%5D%20'
 REPO_URL = 'https://github.com/cranebeaker/coop-anything'
 QUICKSTART_URL = 'https://github.com/cranebeaker/coop-anything#quick-start'
-STATIC = ['index.html', 'favicon.ico', 'styles.css', 'home.css', 'app.js', 'game.js', 'i18n.js', 'md.js', 'account.js', 'editor.js', 'my.js', 'couchlink.js', 'assets', 'data']
+STATIC = ['index.html', 'favicon.ico', 'styles.css', 'home.css', 'inner.css', 'app.js', 'game.js', 'i18n.js', 'md.js', 'account.js', 'editor.js', 'my.js', 'couchlink.js', 'assets', 'data']
 FONTS = os.path.join(ROOT, 'tools', 'fonts')
 
 with open(os.path.join(ROOT, 'data', 'tables.js'), encoding='utf-8') as _f:
@@ -87,14 +87,17 @@ SCOPE_WORD = {'yes': 'Synced', 'shared': 'Shared', 'per-player': 'Per player', '
               'no': 'Not synced', 'unknown': 'Unknown'}
 PLAYABLE = {'S', 'A', 'B'}
 
-# Share-card colours: the site's dark theme (styles.css).
+# Share-card colours: the site's dark theme (home.css).
 INK = {
-    'bg': (14, 16, 23), 'scan': (19, 21, 29), 'surface': (22, 25, 36), 'fg': (232, 234, 242),
-    'muted': (151, 157, 179), 'accent': (79, 209, 181), 'tier-ink': (26, 26, 26),
+    'bg': (13, 14, 18), 'scan': (19, 21, 29), 'surface': (28, 28, 30), 'fg': (245, 245, 247),
+    'muted': (161, 161, 166), 'accent': (100, 181, 255), 'tier-ink': (26, 26, 26),
 }
-TIER_COLORS = {'S': '#ff7f7f', 'A': '#ffbf7f', 'B': '#ffdf7f', 'C': '#ffff7f', 'D': '#bfff7f', 'X': '#c9cdd8'}
-STAGE_COLORS = {'released': '#4cc47f', 'beta': '#3fc7c1', 'development': '#e3a63c', 'abandoned': '#7d8398',
-                'wanted': '#e08bd6'}
+# Tier tiles: (background, letter), the same pastel pairs as the site.
+TIER_COLORS = {'S': ((255, 217, 217), (155, 28, 28)), 'A': ((255, 227, 194), (138, 67, 0)),
+               'B': ((216, 233, 255), (10, 74, 158)), 'C': ((229, 243, 216), (45, 106, 14)),
+               'D': ((236, 236, 240), (85, 85, 90)), 'X': ((236, 236, 240), (85, 85, 90))}
+STAGE_COLORS = {'released': '#30d158', 'beta': '#64b5ff', 'development': '#ff9f0a', 'abandoned': '#8e8e93',
+                'wanted': '#bf5af2'}
 
 TODAY = dt.datetime.now(dt.timezone.utc).date()
 COUCHLINK_TITLES = set()  # directory titles that are also in data/couchlink.json; main() fills it
@@ -578,6 +581,7 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
     url = f'{SITE}/{path}'
     body_attr = f' data-visit="{esc(visit)}"' if visit else ''
     ld_tag = ('\n<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace('</', '<\\/') + '</script>') if ld else ''
+    couch_here = ' aria-current="page"' if current == 'couchlink' else ''
     extra_scripts = ''.join(f'\n<script src="{root}{name}"></script>' for name in scripts)
     return f'''<!doctype html>
 <html lang="en">
@@ -605,30 +609,32 @@ def document(*, title, description, path, share_url, image_alt, body, snapshot, 
 <link rel="apple-touch-icon" href="{root}assets/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="{root}styles.css">
+<link rel="stylesheet" href="{root}home.css">
+<link rel="stylesheet" href="{root}inner.css">
 {mail_meta()}{analytics_tag()}</head>
-<body{body_attr}>
+<body class="home inner"{body_attr}>
 <a class="skip" href="#main">Skip to the content</a>
 
-<header class="masthead masthead--slim">
-  <div class="wrap masthead__top">
-    <a class="home-link" href="{root}"><img src="{root}assets/logo.png" alt="CoOp:Anything, back to every co-op mod" width="2074" height="370"></a>
-    <div class="masthead__actions">
-      {newsletter_button(root)}<a class="nav-link" href="{root}?stage=wanted#results">Wanted</a>{couchlink_tab(root, current)}<a class="nav-link" href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op ↗</a>
-      <a class="submit-btn feedback-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord">
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.38-.44.87-.61 1.25a18.3 18.3 0 0 0-5.49 0 12.6 12.6 0 0 0-.62-1.25.08.08 0 0 0-.08-.04 19.7 19.7 0 0 0-4.88 1.52.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13l.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01l.37.29a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.89a.08.08 0 0 0-.04.11c.36.7.77 1.36 1.22 1.99a.08.08 0 0 0 .09.03 19.8 19.8 0 0 0 6-3.03.08.08 0 0 0 .03-.06c.5-5.18-.84-9.67-3.55-13.66a.06.06 0 0 0-.03-.03ZM8.02 15.33c-1.18 0-2.16-1.09-2.16-2.42s.96-2.42 2.16-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42Zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42s.95-2.42 2.15-2.42c1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42Z"/></svg>
-        <span>Join Discord</span>
-      </a>
-      <a class="submit-btn" href="{SUBMIT_URL}" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        <span>Submit a mod</span>
-      </a>
-      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
-        <svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
-        <svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
-      </button>
-    </div>
+<header class="nav">
+  <a class="nav__brand" href="{root}" aria-label="Co-op Anything, back to every co-op mod">
+    <svg class="rings" viewBox="0 0 28 28" width="30" height="30" fill="none" stroke-width="3" aria-hidden="true"><circle cx="10.5" cy="14" r="7" stroke="#0a5cff"/><circle cx="17.5" cy="14" r="7" stroke="#5ac8fa"/></svg>
+    <span>Co-op Anything</span>
+  </a>
+  <nav class="nav__links" aria-label="More">
+    <a href="{root}?stage=wanted#results">Wanted</a>
+    <a href="{root}couchlink/"{couch_here}>Couchlink</a>
+    <a href="https://github.com/cranebeaker/coop-anything#quick-start" target="_blank" rel="noopener" title="The open playbook for making any single-player game co-op with an AI agent">Make your own game co-op</a>
+    <a href="{root}releases/">Releases</a>
+  </nav>
+  <div class="topbar masthead__actions">
+    {newsletter_button(root)}<a class="top-btn discord-btn" href="https://discord.gg/EXGB49R82t" target="_blank" rel="noopener" aria-label="Join Discord" title="Chat with co-op modders on the Co-op Anything Discord"><span>Join Discord</span></a>
+    <a class="top-btn top-btn--primary" href="{SUBMIT_URL}" target="_blank" rel="noopener" aria-label="Submit a mod" title="Add a co-op mod that's missing (opens a form on GitHub)"><span>Submit a mod</span></a>
+    <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark theme">
+      <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M20.4 14.6A8.5 8.5 0 0 1 9.4 3.6a.75.75 0 0 0-1-.9A10 10 0 1 0 21.3 15.6a.75.75 0 0 0-.9-1Z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg>
+    </button>
   </div>
 </header>
 
@@ -974,23 +980,26 @@ def feed(entries, limit=50):
 W, H, PAD = 1200, 630, 64
 _fonts = {}
 
+# Share cards use Inter (OFL, tools/fonts/Inter-Variable.ttf), set to a weight by name.
+WEIGHTS = {'Medium': 500, 'Semibold': 600, 'Bold': 700, 'ExtraBold': 800}
+DISPLAY, BOLD, MEDIUM = 'Inter-ExtraBold', 'Inter-Bold', 'Inter-Medium'
+
 
 def font(name, size):
     key = (name, size)
     if key not in _fonts:
-        _fonts[key] = ImageFont.truetype(os.path.join(FONTS, name + '.ttf'), size)
+        f = ImageFont.truetype(os.path.join(FONTS, 'Inter-Variable.ttf'), size)
+        f.set_variation_by_axes([min(32, max(14, size)), WEIGHTS[name.split('-')[1]]])
+        _fonts[key] = f
     return _fonts[key]
 
 
-DISPLAY, BOLD, MEDIUM = 'BigShouldersDisplay-ExtraBold', 'Archivo-Bold', 'Archivo-Medium'
+BLUE_DARK, BLUE_LIGHT = (10, 92, 255), (90, 200, 250)
 
 
 def canvas():
     im = Image.new('RGB', (W, H), INK['bg'])
-    d = ImageDraw.Draw(im)
-    for y in range(3, H, 4):  # the masthead's scanlines
-        d.line([(0, y), (W, y)], fill=INK['scan'])
-    return im, d
+    return im, ImageDraw.Draw(im)
 
 
 def wrap(text, f, width):
@@ -1026,71 +1035,114 @@ def rounded(im, radius):
     return mask
 
 
-def paste_cover(base, e, box):
-    """Box art fitted inside box (x0, y0, x1, y1) with a soft shadow; initials when there's none."""
+def gradient_text(im, xy, text, f, c0=BLUE_LIGHT, c1=(10, 132, 255)):
+    """Text filled with a left-to-right gradient; xy is the left baseline."""
+    x, y = xy
+    l, t, r, b = f.getbbox(text, anchor='ls')
+    w, h = r - l + 4, b - t + 4
+    mask = Image.new('L', (w, h), 0)
+    ImageDraw.Draw(mask).text((-l + 2, -t + 2), text, font=f, fill=255, anchor='ls')
+    grad = Image.new('RGB', (w, h))
+    gd = ImageDraw.Draw(grad)
+    for i in range(w):
+        k = i / max(1, w - 1)
+        gd.line([(i, 0), (i, h)], fill=tuple(round(c0[j] + (c1[j] - c0[j]) * k) for j in range(3)))
+    im.paste(grad, (x + l - 2, y + t - 2), mask)
+    return r - l
+
+
+def rings_mark(im, x, y, size):
+    """The two-ring mark, drawn at 8x and scaled down, top-left at (x, y)."""
+    ss = 8
+    big = Image.new('RGBA', (size * ss, size * ss), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    unit = size * ss / 24.0
+    r, sw = 7 * unit, 3.2 * unit
+    for cx, col in ((10.5, BLUE_DARK), (17.5, BLUE_LIGHT)):
+        cx_p, cy_p = (cx - 2) * unit, (14 - 2) * unit
+        d.ellipse([cx_p - r - sw / 2, cy_p - r - sw / 2, cx_p + r + sw / 2, cy_p + r + sw / 2], outline=col, width=round(sw))
+    small = big.resize((size, size), Image.LANCZOS)
+    im.paste(small, (x, y), small)
+
+
+def brand(im, d, x, y, scale=1.0):
+    """Rings and the gradient name, with the name's left edge at x and the mark's top at y."""
+    size = round(46 * scale)
+    rings_mark(im, x, y, size)
+    f = font(DISPLAY, round(34 * scale))
+    gradient_text(im, (x + size + 14, y + round(size * 0.72)), 'Co-op Anything', f)
+    return size
+
+
+def poster(base, e, box):
+    """Box art as a poster: a blurred copy fills the rounded frame, the art sits whole on top."""
     x0, y0, x1, y1 = box
     bw, bh = x1 - x0, y1 - y0
+    frame = Image.new('RGB', (bw, bh), INK['surface'])
     path = os.path.join(ROOT, e['cover']) if e.get('cover') else None
     if path and os.path.exists(path):
         art = Image.open(path).convert('RGB')
-        scale = min(bw / art.width, bh / art.height)
-        art = art.resize((max(1, round(art.width * scale)), max(1, round(art.height * scale))), Image.LANCZOS)
-        x, y = x0 + (bw - art.width) // 2, y0 + (bh - art.height) // 2
+        fill = max(bw / art.width, bh / art.height)
+        back = art.resize((max(bw, round(art.width * fill)), max(bh, round(art.height * fill))), Image.LANCZOS)
+        left, top = (back.width - bw) // 2, (back.height - bh) // 2
+        back = back.crop((left, top, left + bw, top + bh)).filter(ImageFilter.GaussianBlur(22))
+        frame.paste(Image.blend(back, Image.new('RGB', back.size, (0, 0, 0)), 0.18))
+        fit = min((bw - 28) / art.width, (bh - 28) / art.height)
+        art = art.resize((max(1, round(art.width * fit)), max(1, round(art.height * fit))), Image.LANCZOS)
+        ax, ay = (bw - art.width) // 2, (bh - art.height) // 2
         shadow = Image.new('L', (art.width + 60, art.height + 60), 0)
-        ImageDraw.Draw(shadow).rounded_rectangle([30, 36, art.width + 30, art.height + 36], 12, fill=150)
-        shadow = shadow.filter(ImageFilter.GaussianBlur(14))
-        base.paste((0, 0, 0), (x - 30, y - 30), shadow)
-        base.paste(art, (x, y), rounded(art, 10))
-        return
-    side = min(bw, bh, 420)
-    x, y = x0 + (bw - side) // 2, y0 + (bh - side) // 2
-    tile = Image.new('RGB', (side, side), console_of(e['console'])['color'])
-    td = ImageDraw.Draw(tile)
-    td.text((side / 2, side / 2), initials(e['title']), font=font(DISPLAY, side // 3), fill='#ffffff', anchor='mm')
-    base.paste(tile, (x, y), rounded(tile, 14))
+        ImageDraw.Draw(shadow).rounded_rectangle([30, 36, art.width + 30, art.height + 36], 12, fill=170)
+        frame.paste((0, 0, 0), (ax - 30, ay - 30), shadow.filter(ImageFilter.GaussianBlur(14)))
+        frame.paste(art, (ax, ay), rounded(art, 10))
+    else:
+        c = console_of(e['console'])['color'].lstrip('#')
+        rgb = tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))
+        fd = ImageDraw.Draw(frame)
+        for yy in range(bh):
+            k = yy / bh
+            fd.line([(0, yy), (bw, yy)], fill=tuple(round(v * (1 - 0.6 * k)) for v in rgb))
+        fd.text((bw / 2, bh / 2), initials(e['title']), font=font(DISPLAY, bw // 3), fill=(255, 255, 255), anchor='mm')
+    base.paste(frame, (x0, y0), rounded(frame, 28))
 
 
 def tier_tile(d, xy, size, tier):
     x, y = xy
-    d.rounded_rectangle([x, y, x + size, y + size], 12, fill=TIER_COLORS[tier])
-    f = font(DISPLAY, round(size * 0.78))
+    bg, fg = TIER_COLORS[tier]
+    d.rounded_rectangle([x, y, x + size, y + size], round(size * 0.28), fill=bg)
+    f = font(DISPLAY, round(size * 0.62))
     l, t, r, b = f.getbbox(tier, anchor='ls')
-    d.text((x + (size - (r - l)) / 2 - l, y + (size - (b - t)) / 2 - t), tier, font=f, fill=INK['tier-ink'], anchor='ls')
-
-
-def logo(height):
-    im = Image.open(os.path.join(ROOT, 'assets', 'logo.png')).convert('RGBA')
-    return im.resize((round(im.width * height / im.height), height), Image.LANCZOS)
+    d.text((x + (size - (r - l)) / 2 - l, y + (size - (b - t)) / 2 - t), tier, font=f, fill=fg, anchor='ls')
 
 
 def game_card(game, out):
     pick, es = game['pick'], game['entries']
     multi = len(es) > 1
     im, d = canvas()
-    paste_cover(im, pick if pick.get('cover') else next((e for e in es if e.get('cover')), pick), (PAD, PAD, 464, H - PAD))
+    art = pick if pick.get('cover') else next((e for e in es if e.get('cover')), pick)
+    pw = round((H - 2 * PAD) * 0.75)
+    poster(im, art, (PAD, PAD, PAD + pw, H - PAD))
 
-    x, right = 520, W - PAD
+    x, right = PAD + pw + 56, W - PAD
     width = right - x
-    mark = logo(46)
-    im.paste(mark, (x - round(mark.width * 40 / 2074), PAD), mark)
-    d.text((right, PAD + 34), SITE_HOST, font=font(BOLD, 22), fill=INK['accent'], anchor='rs')
+    brand(im, d, x, PAD, 0.78)
+    d.text((right, PAD + 30), SITE_HOST, font=font(BOLD, 22), fill=INK['accent'], anchor='rs')
 
     # Title: as big as fits in three lines above the meta line, but on fewer lines
     # when that costs little size ("P.T. (Silent Hills)" stays on one line).
     top, limit = 150, 384
     best = {}
     for n in (1, 2, 3):
-        for size in range(108, 46, -4):
+        for size in range(92, 42, -4):
             f = font(DISPLAY, size)
             lines = wrap(game['name'], f, width)
-            if len(lines) <= n and all(f.getlength(ln) <= width for ln in lines) and n * size * 0.98 <= limit - top:
+            if len(lines) <= n and all(f.getlength(ln) <= width for ln in lines) and n * size * 1.04 <= limit - top:
                 best[n] = size
                 break
-    biggest = max(best.values(), default=48)
-    size = next((best[n] for n in (1, 2, 3) if best.get(n, 0) >= biggest * 0.82), 48)
+    biggest = max(best.values(), default=44)
+    size = next((best[n] for n in (1, 2, 3) if best.get(n, 0) >= biggest * 0.82), 44)
     f = font(DISPLAY, size)
     lines = wrap(game['name'], f, width)
-    lh = round(size * 0.98)
+    lh = round(size * 1.04)
     y = top + size * 0.8
     for ln in lines[:3]:
         d.text((x, y), clip(ln, f, width), font=f, fill=INK['fg'], anchor='ls')
@@ -1100,15 +1152,14 @@ def game_card(game, out):
     d.text((x, y - lh + size * 0.2 + 40), clip(meta, font(MEDIUM, 26), width), font=font(MEDIUM, 26), fill=INK['muted'], anchor='ls')
 
     # The verdict: tier tile, then what it is.
-    tile = 120
+    tile = 112
     ty = H - PAD - tile
     tier_tile(d, (x, ty), tile, pick['quality'])
     tx = x + tile + 26
     label = pick_label(game) if multi else STAGES[pick['stage']]['label']
     color = INK['accent'] if multi else STAGE_COLORS[pick['stage']]
-    spaced(d, (tx, ty + 30), label.upper(), font(BOLD, 21), color, 2.2)
-    d.text((tx, ty + 76), clip(pick['project'], font(BOLD, 40), right - tx), font=font(BOLD, 40), fill=INK['fg'], anchor='ls')
-    # Tier and stage, then the project count, shortened until it fits.
+    spaced(d, (tx, ty + 30), label.upper(), font(BOLD, 20), color, 1.6)
+    d.text((tx, ty + 74), clip(pick['project'], font(BOLD, 38), right - tx), font=font(BOLD, 38), fill=INK['fg'], anchor='ls')
     tier = TIERS[pick['quality']]['label']
     if multi:
         stage = STAGES[pick['stage']]['label']
@@ -1116,47 +1167,46 @@ def game_card(game, out):
     else:
         by = f'by {pick["team"]}' if pick.get('team') and pick['team'] != pick['project'] else ''
         options = [f'{tier} · {by}', tier] if by else [tier]
-    f = font(MEDIUM, 25)
+    f = font(MEDIUM, 24)
     detail = next((o for o in options if f.getlength(o) <= right - tx), options[-1])
-    d.text((tx, ty + 114), clip(detail, f, right - tx), font=f, fill=INK['muted'], anchor='ls')
+    d.text((tx, ty + 108), clip(detail, f, right - tx), font=f, fill=INK['muted'], anchor='ls')
 
-    im.save(out, 'JPEG', quality=86, optimize=True, progressive=True)
+    im.save(out, 'JPEG', quality=88, optimize=True, progressive=True)
 
 
 def home_card(entries, games, out):
     im, d = canvas()
-    mark = logo(104)
-    im.paste(mark, (PAD - round(mark.width * 40 / 2074), 92), mark)
-    f = font(MEDIUM, 32)
-    y = 92 + 104 + 62
-    for ln in wrap('Every co-op mod for single-player games.', f, 420):
-        d.text((PAD, y), ln, font=f, fill=INK['fg'], anchor='ls')
-        y += 42
+    brand(im, d, PAD, 58, 1.0)
+
+    # The question, in two lines; the second in the brand gradient.
+    f = font(DISPLAY, 74)
+    d.text((PAD, 232), 'Can I play it', font=f, fill=INK['fg'], anchor='ls')
+    gradient_text(im, (PAD, 314), 'with friends?', f)
+    f = font(MEDIUM, 28)
+    y = 372
+    for ln in wrap('Every co-op mod for single-player games.', f, 520):
+        d.text((PAD, y), ln, font=f, fill=INK['muted'], anchor='ls')
+        y += 38
 
     # Four stage counts, two by two (abandoned is left out).
     for i, st in enumerate([s for s in STAGE_ORDER if s != 'abandoned'][:4]):
-        x, y = PAD + (i % 2) * 290, 452 + (i // 2) * 100
+        x, yy = PAD + (i % 2) * 310, 504 + (i // 2) * 76
         n = str(sum(1 for e in entries if e['stage'] == st))
-        d.text((x, y), n, font=font(DISPLAY, 76), fill=INK['fg'], anchor='ls')
-        lx = x + font(DISPLAY, 76).getlength(n) + 16
-        d.ellipse([lx, y - 22, lx + 12, y - 10], fill=STAGE_COLORS[st])
-        d.text((lx + 20, y - 8), STAGES[st]['label'], font=font(BOLD, 23), fill=INK['muted'], anchor='ls')
+        d.text((x, yy), n, font=font(DISPLAY, 52), fill=INK['fg'], anchor='ls')
+        lx = x + font(DISPLAY, 52).getlength(n) + 12
+        d.ellipse([lx, yy - 20, lx + 11, yy - 9], fill=STAGE_COLORS[st])
+        d.text((lx + 18, yy - 6), STAGES[st]['label'], font=font(MEDIUM, 21), fill=INK['muted'], anchor='ls')
 
-    # Box art from the best-loved top-tier games.
+    # Box art posters from the best-loved top-tier games.
     top = sorted((g['pick'] for g in games if g['pick'].get('cover') and g['pick']['quality'] in ('S', 'A', 'B')),
                  key=lambda e: ('SAB'.index(e['quality']), -(e.get('stars') or 0)))[:6]
     cw, ch, gap = 150, 200, 16
-    gx, gy = W - PAD - 3 * cw - 2 * gap, 92
+    gx, gy = W - PAD - 3 * cw - 2 * gap, 74
     for i, e in enumerate(top):
         cx, cy = gx + (i % 3) * (cw + gap), gy + (i // 3) * (ch + gap)
-        cell = Image.new('RGB', (cw, ch), INK['surface'])
-        art = Image.open(os.path.join(ROOT, e['cover'])).convert('RGB')
-        s = min((cw - 12) / art.width, (ch - 12) / art.height)
-        art = art.resize((round(art.width * s), round(art.height * s)), Image.LANCZOS)
-        cell.paste(art, ((cw - art.width) // 2, (ch - art.height) // 2))
-        im.paste(cell, (cx, cy), rounded(cell, 10))
+        poster(im, e, (cx, cy, cx + cw, cy + ch))
     d.text((W - PAD, H - PAD + 6), SITE_HOST, font=font(BOLD, 24), fill=INK['accent'], anchor='rs')
-    im.save(out, 'JPEG', quality=86, optimize=True, progressive=True)
+    im.save(out, 'JPEG', quality=88, optimize=True, progressive=True)
 
 
 def versioned(path, rel):
